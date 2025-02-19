@@ -1,0 +1,68 @@
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { UsersService } from 'src/users/users.service';
+import { JwtService } from '@nestjs/jwt';
+import { JwtPayload } from './passport/jwt.strategy';
+import { RefreshTokenService } from 'src/refresh-token/refresh-token.service';
+
+@Injectable()
+export class AuthService {
+  constructor(
+    private usersService: UsersService,
+    private jwtService: JwtService,
+    private refreshTokenService: RefreshTokenService,
+  ) {}
+
+  async validateUser(username: string, pass: string): Promise<any> {
+    const user = await this.usersService.findByEmail(username);
+    if (!user) this.throwUnauthorized('User not found');
+
+    const isValid = await this.usersService.isValidPassword(
+      pass,
+      user.password,
+    );
+    if (!isValid) this.throwUnauthorized('Invalid password');
+
+    return user;
+  }
+
+  private throwUnauthorized(message: string): never {
+    throw new UnauthorizedException(message);
+  }
+
+  async login(user: JwtPayload) {
+    const payload = { email: user.email, _id: user._id, roles: user.roles }; // Thêm roles vào payload
+    const refreshToken = await this.refreshTokenService.create(
+      user._id,
+      this.jwtService.sign({ userId: user._id }, { expiresIn: '7d' }),
+      new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    );
+    return {
+      access_token: this.jwtService.sign(payload),
+      refresh_token: refreshToken.token,
+    };
+  }
+  async refreshToken(token: string) {
+    const storedToken = await this.refreshTokenService.findByToken(token);
+    if (!storedToken || storedToken.expiresAt < new Date()) {
+      throw new Error('Invalid or expired refresh token');
+    }
+
+    const newAccessToken = this.jwtService.sign(
+      { userId: storedToken.userId },
+      { expiresIn: '15m' },
+    );
+
+    return { accessToken: newAccessToken };
+  }
+  async logout(token: string): Promise<{ message: string }> {
+    const storedToken = await this.refreshTokenService.findByToken(token);
+
+    if (!storedToken) {
+      throw new UnauthorizedException('Invalid token');
+    }
+
+    await this.refreshTokenService.deleteByToken(token);
+
+    return { message: 'Logout successful, refresh token deleted.' };
+  }
+}
