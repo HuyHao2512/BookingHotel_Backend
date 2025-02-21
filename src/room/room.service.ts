@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model, Types } from 'mongoose';
 import { Room, RoomDocument } from './schemas/room.schema';
@@ -7,6 +7,7 @@ import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { Booking, BookingDocument } from 'src/booking/schemas/booking.schema';
 import { City } from 'src/city/schemas/city.schema';
 import { Property } from 'src/property/schemas/property.schema';
+import { TypeRoom } from 'src/type-room/schemas/type-room.schema';
 
 @Injectable()
 export class RoomService {
@@ -15,19 +16,17 @@ export class RoomService {
     @InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
     @InjectModel(City.name) private cityModel: Model<mongoose.Document>,
     @InjectModel(Property.name) private propertyModel: Model<mongoose.Document>,
-
+    @InjectModel(TypeRoom.name) private typeRoomModel: Model<mongoose.Document>,
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async create(createRoomDto: CreateRoomDto, files: Express.Multer.File[]) {
     const images = [];
-
-    // Kiểm tra và upload các file hình ảnh
     if (files && files.length > 0) {
       for (const file of files) {
         const uploadResult = await this.cloudinaryService.uploadImage(
           file,
-          'rooms', // Folder trên Cloudinary
+          'rooms',
         );
         images.push({
           url: uploadResult.secure_url,
@@ -35,22 +34,41 @@ export class RoomService {
         });
       }
     }
-
-    // Tạo một instance Room mới với dữ liệu từ DTO và danh sách hình ảnh
+    if (typeof createRoomDto.conveniences === 'string') {
+      try {
+        createRoomDto.conveniences = (createRoomDto.conveniences as any)
+          .replace(/\[|\]/g, '')
+          .split(',')
+          .map((id) => id.trim())
+          .filter((id) => Types.ObjectId.isValid(id))
+          .map((id) => new Types.ObjectId(id));
+      } catch (error) {
+        throw new BadRequestException('Invalid conveniences format');
+      }
+    }
     const newRoom = new this.roomModel({
       ...createRoomDto,
       images,
     });
 
-    return newRoom.save(); // Lưu Room mới vào database
+    return newRoom.save();
   }
 
   async findAll(): Promise<Room[]> {
-    return this.roomModel
-      .find()
-      .populate('property') // Lấy thông tin property
-      .populate('conveniences') // Lấy thông tin conveniences
-      .exec();
+    const rooms = await this.roomModel.aggregate([
+      {
+        $lookup: {
+          from: 'conveniences',
+          localField: 'conveniences',
+          foreignField: '_id',
+          as: 'conveniences',
+        },
+      },
+    ]);
+    return this.roomModel.populate(rooms, [
+      { path: 'property' },
+      { path: 'roomtype' },
+    ]);
   }
 
   async findById(id: string): Promise<Room> {
@@ -71,7 +89,7 @@ export class RoomService {
       .exec();
   }
   async findAvailableRooms(
-    startDateStr: string, // Nhận dạng chuỗi từ request
+    startDateStr: string,
     endDateStr: string,
     city: string,
   ): Promise<{ availableRooms: Room[]; totalAvailable: number }> {
@@ -93,7 +111,7 @@ export class RoomService {
       {
         $group: {
           _id: '$room',
-          bookedCount: { $sum: 1 }, // Đếm số lần phòng này đã được đặt
+          bookedCount: { $sum: 1 },
         },
       },
     ]);
@@ -117,10 +135,10 @@ export class RoomService {
     const availableRooms = allRooms
       .map((room) => {
         const bookedCount = bookedRoomMap.get(room._id.toString()) || 0;
-        const remainingRooms = Math.max(room.totalRoom - bookedCount, 0); // Số lượng phòng còn trống
-        return { ...room, remainingRooms }; // Thêm remainingRooms vào kết quả
+        const remainingRooms = Math.max(room.totalRoom - bookedCount, 0);
+        return { ...room, remainingRooms };
       })
-      .filter((room) => room.remainingRooms > 0); // Chỉ giữ lại phòng còn trống
+      .filter((room) => room.remainingRooms > 0);
 
     console.log('Available Rooms:', availableRooms);
     const totalAvailable = availableRooms.length;

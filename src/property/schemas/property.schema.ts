@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import { Amenity } from 'src/amenity/schemas/amenity.schema';
 import { Category } from 'src/category/schemas/category.schema';
 import { City } from 'src/city/schemas/city.schema';
 import { Image } from 'src/image/schemas/image.schema';
@@ -22,7 +23,7 @@ export class Property {
   city: City;
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Amenity' }] })
-  amenities: Types.ObjectId[]; // Danh sách tiện ích (Amenity)
+  amenities: Amenity[];
 
   @Prop({ required: true })
   address: string;

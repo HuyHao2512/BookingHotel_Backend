@@ -1,10 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import mongoose, { Model, Types } from 'mongoose';
 import { Property, PropertyDocument } from './schemas/property.schema';
 import { CreatePropertyDto } from './dto/create-property.dto';
 import { UpdatePropertyDto } from './dto/update-property.dto';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+import path from 'path';
 
 @Injectable()
 export class PropertyService {
@@ -30,7 +35,12 @@ export class PropertyService {
         });
       }
     }
-
+    if (typeof createPropertyDto.amenities === 'string') {
+      createPropertyDto.amenities = (createPropertyDto.amenities as any)
+        .replace(/\[|\]/g, '')
+        .split(',')
+        .map((amenity) => new Types.ObjectId(amenity));
+    }
     const newProperty = new this.propertyModel({
       ...createPropertyDto,
       images,
@@ -40,23 +50,47 @@ export class PropertyService {
   }
 
   async findAll() {
-    return this.propertyModel
-      .find()
-      .populate('category')
-      .populate('city')
+    const properties = await this.propertyModel
+      .aggregate([
+        {
+          $lookup: {
+            from: 'amenities',
+            localField: 'amenities',
+            foreignField: '_id',
+            as: 'amenities',
+          },
+        },
+      ])
       .exec();
+    return this.propertyModel.populate(properties, [
+      { path: 'category' },
+      { path: 'city' },
+    ]);
   }
 
   async findOne(id: string) {
-    const property = await this.propertyModel
-      .findById(id)
-      .populate('category')
-      .populate('city')
+    const properties = await this.propertyModel
+      .aggregate([
+        { $match: { _id: new mongoose.Types.ObjectId(id) } }, // Tìm theo id
+        {
+          $lookup: {
+            from: 'amenities',
+            localField: 'amenities',
+            foreignField: '_id',
+            as: 'amenities',
+          },
+        },
+      ])
       .exec();
-    if (!property) {
+
+    if (!properties || properties.length === 0) {
       throw new NotFoundException('Property not found');
     }
-    return property;
+
+    return this.propertyModel.populate(properties[0], [
+      { path: 'category' },
+      { path: 'city' },
+    ]);
   }
 
   async findByOwner(owner: string) {

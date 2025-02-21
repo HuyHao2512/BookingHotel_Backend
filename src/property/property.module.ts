@@ -5,6 +5,7 @@ import { PropertyService } from './property.service';
 import { Property, PropertySchema } from './schemas/property.schema';
 import { CategoryModule } from '../category/category.module';
 import { CityModule } from '../city/city.module';
+import { AmenityModule } from 'src/amenity/amenity.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { CityModule } from '../city/city.module';
     ]),
     CategoryModule,
     CityModule,
+    AmenityModule,
   ],
   controllers: [PropertyController],
   providers: [PropertyService],

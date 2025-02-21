@@ -13,7 +13,7 @@ export class Room {
   property: Types.ObjectId; // Thuộc Property nào (quan hệ)
 
   @Prop({ required: true, type: Types.ObjectId, ref: 'RoomType' })
-  roomType: Types.ObjectId; // Loại phòng (RoomType)
+  typeroom: Types.ObjectId; // Loại phòng (RoomType)
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Convenience' }] })
   conveniences: Types.ObjectId[]; // Danh sách tiện nghi (Convenience)

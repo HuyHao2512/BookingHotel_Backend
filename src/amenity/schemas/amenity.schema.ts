@@ -1,10 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
-
-export type AmenityDocument = HydratedDocument<Amenity>;
-
+import { Document } from 'mongoose';
 @Schema()
-export class Amenity {
+export class Amenity extends Document {
   @Prop({ required: true })
   name: string; // Tên tiện ích (ví dụ: "Bể bơi", "Phòng gym")
 }

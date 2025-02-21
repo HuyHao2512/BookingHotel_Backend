@@ -1,3 +1,4 @@
+import { Type } from '@nestjs/common';
 import { IsArray, IsMongoId, IsNotEmpty, IsString } from 'class-validator';
 import { Types } from 'mongoose';
 
@@ -20,7 +21,7 @@ export class CreatePropertyDto {
 
   @IsArray()
   @IsMongoId({ each: true })
-  amenities: string[];
+  amenities: Types.ObjectId[];
 
   @IsString()
   @IsNotEmpty()

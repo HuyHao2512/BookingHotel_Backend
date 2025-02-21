@@ -12,6 +12,10 @@ import { CityModule } from 'src/city/city.module';
 import { Property, PropertySchema } from 'src/property/schemas/property.schema';
 import { Mongoose } from 'mongoose';
 import { City, CitySchema } from 'src/city/schemas/city.schema';
+import {
+  TypeRoom,
+  TypeRoomSchema,
+} from 'src/type-room/schemas/type-room.schema';
 
 @Module({
   imports: [
@@ -21,7 +25,9 @@ import { City, CitySchema } from 'src/city/schemas/city.schema';
       { name: Property.name, schema: PropertySchema },
     ]),
     MongooseModule.forFeature([{ name: City.name, schema: CitySchema }]),
-    TypeRoomModule,
+    MongooseModule.forFeature([
+      { name: TypeRoom.name, schema: TypeRoomSchema },
+    ]),
     AmenityModule,
     ConvenienceModule,
     BookingModule,

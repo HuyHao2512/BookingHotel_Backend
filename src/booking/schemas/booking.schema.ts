@@ -8,7 +8,7 @@ export class Booking {
   property: Types.ObjectId;
 
   @Prop({ required: true, type: Types.ObjectId, ref: 'Room' })
-  room: Types.ObjectId[];
+  rooms: { room: Types.ObjectId; quantity: number }[];
 
   @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
   user: Types.ObjectId;
@@ -21,9 +21,6 @@ export class Booking {
 
   @Prop({ default: 'pending' })
   status: 'pending' | 'confirmed';
-
-  @Prop({ type: Number, required: true, min: 1 })
-  guests: number;
 
   @Prop({ type: Number, required: true, min: 0 })
   totalPrice: number;

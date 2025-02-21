@@ -18,12 +18,12 @@ import { RoomModule } from './room/room.module';
 import { TypeRoomModule } from './type-room/type-room.module';
 import { AmenityModule } from './amenity/amenity.module';
 import { ConvenienceModule } from './convenience/convenience.module';
-import { CartModule } from './cart/cart.module';
 import { BookingModule } from './booking/booking.module';
 import { DiscountModule } from './discount/discount.module';
 import { TemplockModule } from './templock/templock.module';
 import { EmailService } from './email/email.service';
 import { EmailModule } from './email/email.module';
+import { LikedModule } from './liked/liked.module';
 
 @Module({
   imports: [
@@ -43,11 +43,11 @@ import { EmailModule } from './email/email.module';
     TypeRoomModule,
     AmenityModule,
     ConvenienceModule,
-    CartModule,
     BookingModule,
     DiscountModule,
     TemplockModule,
     EmailModule,
+    LikedModule,
   ],
   controllers: [AppController],
   providers: [

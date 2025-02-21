@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
@@ -8,16 +9,25 @@ import {
   IsOptional,
   IsString,
   Min,
+  ValidateNested,
 } from 'class-validator';
 import { Types } from 'mongoose';
+class RoomBookingDto {
+  @IsMongoId()
+  room: string; // ID của loại phòng
 
+  @IsNumber()
+  @Min(1)
+  quantity: number; // Số lượng phòng đặt
+}
 export class CreateBookingDto {
   @IsMongoId()
   property: Types.ObjectId; // Property chứa các phòng
 
   @IsArray()
-  @IsMongoId({ each: true })
-  room: Types.ObjectId[]; // Danh sách ID phòng
+  @ValidateNested({ each: true })
+  @Type(() => RoomBookingDto)
+  rooms: RoomBookingDto[]; // Danh sách ID phòng
 
   @IsMongoId()
   user: Types.ObjectId; // ID người đặt
@@ -31,10 +41,6 @@ export class CreateBookingDto {
   @IsEnum(['pending', 'confirmed'])
   @IsOptional()
   status?: 'pending' | 'confirmed'; // Trạng thái đặt phòng (mặc định: pending)
-
-  @IsNumber()
-  @Min(1)
-  guests: number; // Số lượng khách
 
   @IsNumber()
   @Min(0)
