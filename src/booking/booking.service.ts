@@ -14,6 +14,8 @@ import { RoomService } from 'src/room/room.service';
 import { TemplockService } from 'src/templock/templock.service';
 import { Room, RoomDocument } from 'src/room/schemas/room.schema';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { EmailService } from 'src/email/email.service';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class BookingService {
@@ -23,6 +25,7 @@ export class BookingService {
     @InjectModel(Room.name) private roomModel: Model<RoomDocument>,
     private readonly discountService: DiscountService,
     private readonly templockService: TemplockService,
+    private readonly emailService: EmailService,
   ) {}
 
   async create(createBookingDto: CreateBookingDto): Promise<Booking> {
@@ -30,19 +33,13 @@ export class BookingService {
     let { totalPrice, discount } = createBookingDto;
     const checkInDate = new Date(createBookingDto.checkIn);
     const checkOutDate = new Date(createBookingDto.checkOut);
-    const roomRequests = createBookingDto.rooms; // Danh sách phòng + số lượng
-
-    // Lấy danh sách ID phòng từ roomRequests
+    const roomRequests = createBookingDto.rooms;
     const roomIds = roomRequests.map((r) => r.room);
 
-    // Lấy thông tin phòng từ DB
-    const rooms = await this.roomModel.find({ _id: { $in: roomIds } }).lean(); // Sử dụng .lean() để lấy object đơn giản hơn
-
+    const rooms = await this.roomModel.find({ _id: { $in: roomIds } }).lean();
     if (rooms.length !== roomIds.length) {
       throw new BadRequestException('One or more rooms do not exist');
     }
-
-    // Kiểm tra tất cả phòng thuộc cùng một property
     const propertyIds = [
       ...new Set(rooms.map((room) => room.property.toString())),
     ];
@@ -52,10 +49,7 @@ export class BookingService {
         'All rooms must belong to the same property',
       );
     }
-
     const propertyId = propertyIds[0];
-
-    // Kiểm tra số lượng phòng trống trước khi đặt & tạo danh sách rooms có tên phòng
     const bookingRooms = roomRequests.map((roomRequest) => {
       const room = rooms.find((r) => r._id.toString() === roomRequest.room);
       if (!room)
@@ -66,13 +60,11 @@ export class BookingService {
         );
       }
       return {
-        room: room._id, // ID phòng
-        name: room.name, // Thêm tên phòng
-        quantity: roomRequest.quantity, // Số lượng đặt
+        room: room._id,
+        name: room.name,
+        quantity: roomRequest.quantity,
       };
     });
-
-    // Kiểm tra ngày hợp lệ
     if (checkInDate >= checkOutDate) {
       throw new BadRequestException(
         'Check-out date must be after check-in date',
@@ -81,8 +73,6 @@ export class BookingService {
     if (checkInDate < new Date()) {
       throw new BadRequestException('Check-in date cannot be in the past');
     }
-
-    // Kiểm tra giảm giá
     let finalPrice = totalPrice;
     let discountId = null;
     if (discount) {
@@ -94,8 +84,6 @@ export class BookingService {
         discountId = new Types.ObjectId(discount);
       }
     }
-
-    // Giảm số lượng phòng
     for (const roomRequest of roomRequests) {
       const room = rooms.find((r) => r._id.toString() === roomRequest.room);
       room.quantity -= roomRequest.quantity;
@@ -104,24 +92,36 @@ export class BookingService {
         { $inc: { quantity: -roomRequest.quantity } },
       );
     }
-
-    // Lưu đơn đặt phòng
     const newBooking = new this.bookingModel({
       user: userId,
       property: propertyId,
-      rooms: bookingRooms, // rooms đã có name
+      rooms: bookingRooms,
       finalPrice,
       totalPrice,
       discount: discountId,
       checkIn: checkInDate,
       checkOut: checkOutDate,
       paymentMethod: createBookingDto.paymentMethod,
+      email: createBookingDto.email,
     });
 
     try {
-      return await newBooking.save();
+      const confirmationToken = randomBytes(32).toString('hex');
+      newBooking.confirmationToken = confirmationToken;
+      const savedBooking = await newBooking.save();
+      const confirmLink = `${process.env.FRONTEND_URL}/confirm-booking/${newBooking._id}?token=${confirmationToken}`;
+      await this.emailService.sendMail(
+        createBookingDto.email,
+        'Confirm Your Booking',
+        `
+          <p>Dear customer,</p>
+          <p>Your booking has been received. Click the link below to confirm your booking:</p>
+          <a href="${confirmLink}" target="_blank">Confirm Booking</a>
+        `,
+      );
+
+      return savedBooking;
     } catch (error) {
-      // Nếu lỗi, hoàn lại số lượng phòng
       for (const roomRequest of roomRequests) {
         await this.roomModel.updateOne(
           { _id: roomRequest.room },
@@ -132,6 +132,19 @@ export class BookingService {
     }
   }
 
+  async confirmBooking(bookingId: string, token: string): Promise<void> {
+    const booking = await this.bookingModel.findById(bookingId);
+    if (!booking) throw new NotFoundException('Booking not found');
+
+    if (!booking.confirmationToken || booking.confirmationToken !== token) {
+      throw new BadRequestException('Invalid or expired confirmation token');
+    }
+    booking.status = 'confirmed';
+    booking.confirmationToken = null;
+    await booking.save();
+    console.log('Booking confirmed');
+    return;
+  }
   async findAll(): Promise<Booking[]> {
     return this.bookingModel
       .find()
@@ -275,5 +288,26 @@ export class BookingService {
     this.logger.log(
       `Canceled ${bookingsToCancel.length} unconfirmed bookings.`,
     );
+  }
+
+  async getBookingsByUser(userId: string): Promise<Booking[]> {
+    const bookings = await this.bookingModel
+      .find({ user: userId })
+      .populate('property rooms.room');
+    if (!bookings.length) {
+      throw new BadRequestException('No bookings found for this user');
+    }
+    return bookings;
+  }
+
+  async getBookingsByProperty(propertyId: string): Promise<Booking[]> {
+    const bookings = await this.bookingModel
+      .find({ property: propertyId })
+      .populate('user rooms.room');
+
+    if (!bookings.length) {
+      throw new BadRequestException('No bookings found for this property');
+    }
+    return bookings;
   }
 }

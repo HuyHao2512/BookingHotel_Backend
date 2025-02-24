@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Liked, LikedDocument } from './schemas/liked.schema';
@@ -14,15 +18,24 @@ export class LikedService {
   async addToLiked(createLikedDto: CreateLikedDto): Promise<Liked> {
     const { user, property } = createLikedDto;
 
-    // Kiểm tra xem property đã có trong danh sách yêu thích chưa
-    const existingLike = await this.likedModel.findOne({ user, property });
+    // Kiểm tra xem user đã có danh sách yêu thích chưa
+    const existingLike = await this.likedModel.findOne({ user });
+
     if (existingLike) {
-      throw new NotFoundException(
-        'This property is already in your liked list',
-      );
+      // Kiểm tra xem property đã có trong danh sách yêu thích chưa
+      if (existingLike.properties.includes(property.toString())) {
+        throw new BadRequestException(
+          'This property is already in your liked list',
+        );
+      }
+
+      // Thêm property vào danh sách đã thích
+      existingLike.properties.push(property.toString());
+      return existingLike.save();
     }
 
-    return this.likedModel.create({ user, property });
+    // Nếu user chưa có danh sách yêu thích, tạo mới
+    return this.likedModel.create({ user, properties: [property] });
   }
 
   // Xóa property khỏi danh sách yêu thích

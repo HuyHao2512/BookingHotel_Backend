@@ -5,5 +5,5 @@ export class CreateLikedDto {
   user: string; // ID người dùng
 
   @IsMongoId()
-  property: string; // ID property
+  property: string[]; // ID property
 }

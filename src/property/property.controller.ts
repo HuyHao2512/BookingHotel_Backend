@@ -8,6 +8,8 @@ import {
   Delete,
   UseInterceptors,
   UploadedFiles,
+  BadRequestException,
+  Query,
 } from '@nestjs/common';
 import { PropertyService } from './property.service';
 import { CreatePropertyDto } from './dto/create-property.dto';
@@ -16,6 +18,7 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { Roles } from 'src/decorator/roles.decorator';
 import { Role } from 'src/auth/enum';
 import { Public } from 'src/decorator/customize';
+import { Types } from 'mongoose';
 
 @Controller('property')
 export class PropertyController {
@@ -37,15 +40,47 @@ export class PropertyController {
     return this.propertyService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.propertyService.findOne(id);
-  }
-
   @Get('owner/:id')
   @Roles(Role.Owner)
   findByOwner(@Param('id') id: string) {
     return this.propertyService.findByOwner(id);
+  }
+  @Get('/city/:cityId')
+  @Public()
+  async getByCity(@Param('cityId') cityId: string) {
+    return this.propertyService.findByCity(cityId);
+  }
+  @Get('/category/:categoryId')
+  @Public()
+  async getByCategory(@Param('categoryId') categoryId: string) {
+    return this.propertyService.findByCategory(categoryId);
+  }
+
+  @Post('filter')
+  @Public()
+  async filterByAmenities(@Body('amenities') amenities: string[]) {
+    if (!amenities || !Array.isArray(amenities) || amenities.length === 0) {
+      throw new BadRequestException(
+        'Amenities array is required and must not be empty',
+      );
+    }
+    return this.propertyService.filterByAmenities(amenities);
+  }
+  @Get('/rate')
+  @Public()
+  async filterByRate(@Query('rate') rate: number) {
+    return this.propertyService.filterByRate(rate);
+  }
+
+  @Get('/top-rate')
+  @Public()
+  async getTopRate() {
+    return this.propertyService.getTopRate();
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.propertyService.findOne(id);
   }
 
   @Patch(':id')

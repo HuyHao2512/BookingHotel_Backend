@@ -24,6 +24,7 @@ import { TemplockModule } from './templock/templock.module';
 import { EmailService } from './email/email.service';
 import { EmailModule } from './email/email.module';
 import { LikedModule } from './liked/liked.module';
+import { ReviewModule } from './review/review.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { LikedModule } from './liked/liked.module';
     TemplockModule,
     EmailModule,
     LikedModule,
+    ReviewModule,
   ],
   controllers: [AppController],
   providers: [

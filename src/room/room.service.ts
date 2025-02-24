@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model, Types } from 'mongoose';
 import { Room, RoomDocument } from './schemas/room.schema';
@@ -88,10 +92,12 @@ export class RoomService {
       .findByIdAndUpdate(id, updateRoomDto, { new: true })
       .exec();
   }
+
   async findAvailableRooms(
     startDateStr: string,
     endDateStr: string,
     city: string,
+    sortOrder?: 'asc' | 'desc',
   ): Promise<{ availableRooms: Room[]; totalAvailable: number }> {
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
@@ -139,9 +145,55 @@ export class RoomService {
         return { ...room, remainingRooms };
       })
       .filter((room) => room.remainingRooms > 0);
-
-    console.log('Available Rooms:', availableRooms);
     const totalAvailable = availableRooms.length;
+    if (sortOrder) {
+      availableRooms.sort((a, b) => {
+        return sortOrder === 'asc' ? a.price - b.price : b.price - a.price;
+      });
+    }
     return { availableRooms, totalAvailable };
+  }
+
+  async findByProperty(propertyId: string) {
+    const rooms = await this.roomModel
+      .find({ property: propertyId }) // Lọc theo propertyId
+      .populate('property') // Populate để lấy thông tin property
+      .exec();
+
+    if (!rooms.length) {
+      throw new NotFoundException('No rooms found for this property');
+    }
+
+    return rooms;
+  }
+
+  async findAvailableRoomsOfProperty(
+    propertyId: string,
+    checkIn: Date,
+    checkOut: Date,
+  ) {
+    // Tìm tất cả các phòng thuộc property
+    const rooms = await this.roomModel.find({ property: propertyId }).exec();
+
+    if (!rooms.length) {
+      throw new NotFoundException('No rooms found for this property');
+    }
+
+    // Lấy danh sách roomId đã bị đặt trong khoảng ngày
+    const bookedRooms = await this.bookingModel
+      .find({
+        room: { $in: rooms.map((r) => r._id) }, // Lọc theo roomId trong danh sách
+        $or: [
+          { checkIn: { $lt: checkOut }, checkOut: { $gt: checkIn } }, // Nếu thời gian đặt trùng khoảng checkIn - checkOut
+        ],
+      })
+      .select('room')
+      .exec();
+
+    // Danh sách ID phòng đã bị đặt
+    const bookedRoomIds = bookedRooms.map((b) => b.rooms.toString());
+
+    // Lọc ra các phòng không có trong danh sách đã đặt
+    return rooms.filter((room) => !bookedRoomIds.includes(room._id.toString()));
   }
 }

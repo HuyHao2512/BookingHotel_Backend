@@ -7,14 +7,15 @@ import {
   Param,
   Delete,
   Query,
+  Res,
+  BadRequestException,
 } from '@nestjs/common';
 import { BookingService } from './booking.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
-import { UpdateBookingDto } from './dto/update-booking.dto';
 import { Roles } from 'src/decorator/roles.decorator';
 import { Role } from 'src/auth/enum';
 import { Public } from 'src/decorator/customize';
-import { RoomService } from 'src/room/room.service';
+import { Response } from 'express';
 
 @Controller('booking')
 export class BookingController {
@@ -31,8 +32,38 @@ export class BookingController {
   findAll() {
     return this.bookingService.findAll();
   }
-
-  //User, Owner, Admin có thể xem một booking cụ thể
+  @Get('confirm/:bookingId')
+  @Roles(Role.User)
+  async confirmBooking(
+    @Param('bookingId') bookingId: string,
+    @Query('token') token: string,
+    @Res() res: Response,
+  ) {
+    try {
+      await this.bookingService.confirmBooking(bookingId, token);
+      return res.redirect(`${process.env.FRONTEND_URL}/confirmation-success`);
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+  @Get('/user/:userId')
+  @Roles(Role.User, Role.Owner, Role.Admin)
+  async getBookingsByUser(@Param('userId') userId: string) {
+    try {
+      return await this.bookingService.getBookingsByUser(userId);
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+  @Get('property/:propertyId')
+  @Roles(Role.Owner, Role.Admin)
+  async getBookingsByProperty(@Param('propertyId') propertyId: string) {
+    try {
+      return await this.bookingService.getBookingsByProperty(propertyId);
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
   @Get(':id')
   @Roles(Role.User, Role.Owner, Role.Admin)
   findOne(@Param('id') id: string) {

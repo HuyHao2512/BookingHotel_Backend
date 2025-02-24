@@ -1,36 +1,31 @@
-// src/email/email.service.ts
 import { Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class EmailService {
   private transporter;
-
   constructor() {
-    // Cấu hình transporter (sử dụng dịch vụ email như Gmail, SendGrid, SES...)
     this.transporter = nodemailer.createTransport({
-      service: 'gmail', // Hoặc dịch vụ email khác (ví dụ: SendGrid, SES...)
+      service: 'gmail',
       auth: {
-        user: 'your-email@gmail.com', // Email của bạn
-        pass: 'your-email-password', // Mật khẩu của email (hoặc App password nếu sử dụng Gmail)
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
       },
     });
   }
 
-  // Hàm gửi email
-  async sendMail(to: string, subject: string, text: string): Promise<void> {
-    const mailOptions = {
-      from: 'your-email@gmail.com',
-      to,
-      subject,
-      text,
-    };
-
+  async sendMail(to: string, subject: string, html: string): Promise<void> {
     try {
-      await this.transporter.sendMail(mailOptions);
-      console.log('Email sent successfully');
+      await this.transporter.sendMail({
+        from: `"Hotel Booking" <${process.env.EMAIL_USER}>`,
+        to,
+        subject,
+        html,
+      });
+      console.log(` Email sent to ${to}`);
     } catch (error) {
-      console.error('Error sending email', error);
+      console.error(`Error sending email:`, error);
+      throw new Error('Could not send email');
     }
   }
 }

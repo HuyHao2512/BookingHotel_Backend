@@ -3,6 +3,7 @@ import {
   IsArray,
   IsBoolean,
   IsDateString,
+  IsEmail,
   IsEnum,
   IsMongoId,
   IsNumber,
@@ -14,50 +15,54 @@ import {
 import { Types } from 'mongoose';
 class RoomBookingDto {
   @IsMongoId()
-  room: string; // ID của loại phòng
+  room: string;
 
   @IsNumber()
   @Min(1)
-  quantity: number; // Số lượng phòng đặt
+  quantity: number;
 }
 export class CreateBookingDto {
   @IsMongoId()
-  property: Types.ObjectId; // Property chứa các phòng
+  property: Types.ObjectId;
 
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => RoomBookingDto)
-  rooms: RoomBookingDto[]; // Danh sách ID phòng
+  rooms: RoomBookingDto[];
 
   @IsMongoId()
-  user: Types.ObjectId; // ID người đặt
+  user: Types.ObjectId;
 
   @IsDateString()
-  checkIn: Date; // Ngày nhận phòng
+  checkIn: Date;
 
   @IsDateString()
-  checkOut: Date; // Ngày trả phòng
+  checkOut: Date;
 
   @IsEnum(['pending', 'confirmed'])
   @IsOptional()
-  status?: 'pending' | 'confirmed'; // Trạng thái đặt phòng (mặc định: pending)
+  status?: 'pending' | 'confirmed';
 
   @IsNumber()
   @Min(0)
-  totalPrice: number; // Giá gốc của đơn đặt phòng
+  totalPrice: number;
 
   @IsMongoId()
   @IsOptional()
-  discount?: Types.ObjectId; // Mã giảm giá (có thể null)
+  discount?: Types.ObjectId;
 
   @IsNumber()
   @Min(0)
-  finalPrice: number; // Giá sau khi áp dụng mã giảm giá
+  finalPrice: number;
 
   @IsString()
-  paymentMethod: string; // Phương thức thanh toán (VNPAY, Momo, Visa,...)
+  paymentMethod: string;
 
   @IsBoolean()
   @IsOptional()
-  isPaid?: boolean; // Trạng thái thanh toán (mặc định: false)
+  isPaid?: boolean;
+
+  @IsString()
+  @IsEmail()
+  email: string;
 }

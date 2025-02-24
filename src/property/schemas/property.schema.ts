@@ -37,7 +37,7 @@ export class Property {
   @Prop({ required: true })
   description: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, default: 0 })
   rate: number;
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Image' }], default: [] })

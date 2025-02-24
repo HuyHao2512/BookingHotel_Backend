@@ -40,9 +40,15 @@ export class RoomController {
   @Post('available')
   @Public()
   async findAvailableRooms(
-    @Body() body: { startDate: string; endDate: string; city: string },
+    @Body()
+    body: {
+      startDate: string;
+      endDate: string;
+      city: string;
+      sortOrder?: 'asc' | 'desc';
+    },
   ) {
-    const { startDate, endDate, city } = body;
+    const { startDate, endDate, city, sortOrder } = body;
 
     // Chuyển đổi startDate và endDate từ chuỗi thành đối tượng Date
     const start = new Date(startDate);
@@ -53,7 +59,33 @@ export class RoomController {
       throw new Error('Invalid date format');
     }
 
-    return await this.roomService.findAvailableRooms(startDate, endDate, city);
+    return await this.roomService.findAvailableRooms(
+      startDate,
+      endDate,
+      city,
+      sortOrder,
+    );
+  }
+
+  @Get('/available-property/:propertyId')
+  @Public()
+  async findAvailableRoomsOfProperty(
+    @Param('propertyId') propertyId: string,
+    @Query('checkIn') checkIn: Date,
+    @Query('checkOut') checkOut: Date,
+  ) {
+    const availableRooms = await this.roomService.findAvailableRoomsOfProperty(
+      propertyId,
+      checkIn,
+      checkOut,
+    );
+    return availableRooms;
+  }
+
+  @Get('/property/:propertyId')
+  @Public()
+  async getByProperty(@Param('propertyId') propertyId: string) {
+    return this.roomService.findByProperty(propertyId);
   }
 
   @Get(':id')

@@ -9,15 +9,17 @@ import { TemplockService } from 'src/templock/templock.service';
 import { TemplockModule } from 'src/templock/templock.module';
 import { RoomModule } from 'src/room/room.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { EmailModule } from 'src/email/email.module';
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Booking.name, schema: BookingSchema }]),
-    DiscountModule, // Import DiscountModule vào BookingModule
+    DiscountModule,
     TemplockModule,
     forwardRef(() => RoomModule),
     ScheduleModule.forRoot(),
+    EmailModule,
   ],
-  providers: [BookingService, DiscountService], // Bây giờ có thể dùng DiscountService
+  providers: [BookingService, DiscountService],
   controllers: [BookingController],
 })
 export class BookingModule {}

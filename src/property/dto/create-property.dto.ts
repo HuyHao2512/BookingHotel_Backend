@@ -39,9 +39,6 @@ export class CreatePropertyDto {
   @IsNotEmpty()
   description: string;
 
-  @IsNotEmpty()
-  rate: number;
-
   @IsArray()
   files?: Express.Multer.File[];
 }

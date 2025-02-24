@@ -18,5 +18,10 @@ import { AmenityModule } from 'src/amenity/amenity.module';
   ],
   controllers: [PropertyController],
   providers: [PropertyService],
+  exports: [
+    MongooseModule.forFeature([
+      { name: Property.name, schema: PropertySchema },
+    ]),
+  ],
 })
 export class PropertyModule {}

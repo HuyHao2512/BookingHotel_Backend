@@ -1,15 +1,15 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import mongoose, { Document, Types } from 'mongoose';
 
 export type LikedDocument = Liked & Document;
 
-@Schema({ timestamps: true })
-export class Liked {
-  @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
-  user: Types.ObjectId; // Người dùng lưu danh sách
+@Schema()
+export class Liked extends Document {
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
+  user: string;
 
-  @Prop({ required: true, type: Types.ObjectId, ref: 'Property' })
-  property: Types.ObjectId; // Property được yêu thích
+  @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Property' }] })
+  properties: string[];
 }
 
 export const LikedSchema = SchemaFactory.createForClass(Liked);

@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import mongoose, { Model, Types } from 'mongoose';
+import mongoose, { Model, ObjectId, Types } from 'mongoose';
 import { Property, PropertyDocument } from './schemas/property.schema';
 import { CreatePropertyDto } from './dto/create-property.dto';
 import { UpdatePropertyDto } from './dto/update-property.dto';
@@ -119,5 +119,54 @@ export class PropertyService {
       throw new NotFoundException('Property not found');
     }
     return deletedProperty;
+  }
+
+  async findByCity(cityId: string) {
+    const properties = await this.propertyModel
+      .find({ city: cityId })
+      .populate('category')
+      .populate('city')
+      .exec();
+
+    if (!properties.length) {
+      throw new NotFoundException('No properties found for this city');
+    }
+
+    return properties;
+  }
+
+  async findByCategory(categoryId: string) {
+    const properties = await this.propertyModel
+      .find({ category: categoryId })
+      .populate('category')
+      .populate('city')
+      .exec();
+    return properties;
+  }
+
+  async filterByAmenities(amenities: string[]): Promise<Property[]> {
+    // Kiểm tra xem tất cả ID có hợp lệ không
+    const validAmenities = amenities.filter((id) =>
+      mongoose.Types.ObjectId.isValid(id),
+    );
+    if (validAmenities.length !== amenities.length) {
+      throw new BadRequestException('One or more amenity IDs are invalid');
+    }
+
+    const amenitiesObjectIds = validAmenities.map(
+      (id) => new mongoose.Types.ObjectId(id),
+    );
+
+    return await this.propertyModel.find({
+      amenities: { $all: amenitiesObjectIds },
+    });
+  }
+
+  async filterByRate(rate: number) {
+    return this.propertyModel.find({ rate });
+  }
+
+  async getTopRate() {
+    return this.propertyModel.find().sort({ rate: -1 }).limit(10);
   }
 }

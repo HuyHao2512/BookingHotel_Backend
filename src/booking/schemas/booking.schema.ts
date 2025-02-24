@@ -36,5 +36,11 @@ export class Booking {
 
   @Prop({ type: Boolean, default: false })
   isPaid: boolean;
+
+  @Prop({ type: String, required: true })
+  email: string;
+
+  @Prop()
+  confirmationToken: string;
 }
 export const BookingSchema = SchemaFactory.createForClass(Booking);
