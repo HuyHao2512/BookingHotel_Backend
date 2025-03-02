@@ -47,7 +47,11 @@ export class CityController {
   async countCities() {
     return this.cityService.countCities();
   }
-
+  @Get('country')
+  @Public()
+  async getCityOfCountry(@Query('name') name: string) {
+    return this.cityService.getCityOfCountry(name);
+  }
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.cityService.findOne(id);

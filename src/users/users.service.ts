@@ -31,7 +31,11 @@ export class UsersService {
       roles: roles, // Lưu danh sách roles
     });
 
-    return user;
+    return {
+      userId: user._id, // Trả về userId
+      email: user.email,
+      roles: user.roles,
+    };
   }
 
   findAll() {

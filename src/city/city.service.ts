@@ -94,4 +94,8 @@ export class CityService {
   async countCities() {
     return this.cityModel.countDocuments().exec();
   }
+
+  async getCityOfCountry(name: string) {
+    return this.cityModel.find({ country: name }).exec();
+  }
 }

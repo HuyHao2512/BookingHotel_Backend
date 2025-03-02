@@ -25,7 +25,7 @@ export class PropertyController {
   constructor(private readonly propertyService: PropertyService) {}
 
   @Post()
-  @Roles(Role.Owner)
+  @Public()
   @UseInterceptors(FilesInterceptor('files')) // Đảm bảo key "files" khớp với form-data
   create(
     @Body() createPropertyDto: CreatePropertyDto,

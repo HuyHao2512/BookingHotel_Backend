@@ -12,6 +12,7 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Roles } from 'src/decorator/roles.decorator';
 import { Role } from 'src/auth/enum';
+import { Public } from 'src/decorator/customize';
 
 @Controller('category')
 export class CategoryController {
@@ -24,6 +25,7 @@ export class CategoryController {
   }
 
   @Get()
+  @Public()
   findAll() {
     return this.categoryService.findAll();
   }
