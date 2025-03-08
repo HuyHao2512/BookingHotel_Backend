@@ -88,8 +88,12 @@ export class RoomService {
   }
 
   async update(id: string, updateRoomDto: CreateRoomDto): Promise<Room> {
+    const { property, ...updatedData } = updateRoomDto;
     return this.roomModel
-      .findByIdAndUpdate(id, updateRoomDto, { new: true })
+      .findByIdAndUpdate(id, updatedData, {
+        new: true, // Trả về dữ liệu sau khi update
+        runValidators: true, // Kiểm tra validation schema
+      })
       .exec();
   }
 
@@ -155,16 +159,29 @@ export class RoomService {
   }
 
   async findByProperty(propertyId: string) {
-    const rooms = await this.roomModel
-      .find({ property: propertyId }) // Lọc theo propertyId
-      .populate('property') // Populate để lấy thông tin property
-      .exec();
+    const rooms = await this.roomModel.aggregate([
+      {
+        $match: { property: propertyId }, // Lọc theo propertyId
+      },
+      {
+        $lookup: {
+          from: 'conveniences',
+          localField: 'conveniences',
+          foreignField: '_id',
+          as: 'conveniences',
+        },
+      },
+    ]);
+    const populatedRooms = await this.roomModel.populate(rooms, [
+      { path: 'property' },
+      { path: 'roomtype' },
+    ]);
 
-    if (!rooms.length) {
+    if (!populatedRooms.length) {
       throw new NotFoundException('No rooms found for this property');
     }
 
-    return rooms;
+    return populatedRooms;
   }
 
   async findAvailableRoomsOfProperty(
@@ -172,28 +189,57 @@ export class RoomService {
     checkIn: Date,
     checkOut: Date,
   ) {
-    // Tìm tất cả các phòng thuộc property
-    const rooms = await this.roomModel.find({ property: propertyId }).exec();
+    const Listrooms = await this.roomModel.aggregate([
+      {
+        $match: { property: propertyId }, // Lọc theo propertyId
+      },
+      {
+        $lookup: {
+          from: 'conveniences',
+          localField: 'conveniences',
+          foreignField: '_id',
+          as: 'conveniences',
+        },
+      },
+    ]);
 
+    const rooms = await this.roomModel.populate(Listrooms, [
+      { path: 'property' },
+      { path: 'roomtype' },
+    ]);
     if (!rooms.length) {
       throw new NotFoundException('No rooms found for this property');
     }
 
-    // Lấy danh sách roomId đã bị đặt trong khoảng ngày
+    // Lấy danh sách đặt phòng trùng ngày
     const bookedRooms = await this.bookingModel
       .find({
-        room: { $in: rooms.map((r) => r._id) }, // Lọc theo roomId trong danh sách
-        $or: [
-          { checkIn: { $lt: checkOut }, checkOut: { $gt: checkIn } }, // Nếu thời gian đặt trùng khoảng checkIn - checkOut
-        ],
+        'rooms.room': { $in: rooms.map((r) => r._id) }, // Lọc theo danh sách roomId
+        checkIn: { $lt: checkOut }, // Check-in trước thời gian check-out
+        checkOut: { $gt: checkIn }, // Check-out sau thời gian check-in
       })
-      .select('room')
-      .exec();
+      .select('rooms') // Chỉ lấy danh sách phòng đã đặt
+      .lean();
 
-    // Danh sách ID phòng đã bị đặt
-    const bookedRoomIds = bookedRooms.map((b) => b.rooms.toString());
+    // Tạo map lưu số lượng phòng đã được đặt trong khoảng thời gian
+    const bookedRoomCounts = new Map<string, number>();
+    for (const booking of bookedRooms) {
+      for (const bookedRoom of booking.rooms) {
+        const roomId = bookedRoom.room.toString();
+        const quantity = bookedRoom.quantity;
+        bookedRoomCounts.set(
+          roomId,
+          (bookedRoomCounts.get(roomId) || 0) + quantity,
+        );
+      }
+    }
 
-    // Lọc ra các phòng không có trong danh sách đã đặt
-    return rooms.filter((room) => !bookedRoomIds.includes(room._id.toString()));
+    // Lọc danh sách phòng còn trống dựa trên totalRoom - số lượng đã đặt
+    const availableRooms = rooms.filter((room) => {
+      const bookedQuantity = bookedRoomCounts.get(room._id.toString()) || 0;
+      return bookedQuantity < room.totalRoom; // Nếu số lượng đã đặt nhỏ hơn totalRoom, phòng còn trống
+    });
+
+    return availableRooms;
   }
 }

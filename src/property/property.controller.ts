@@ -39,6 +39,31 @@ export class PropertyController {
   findAll() {
     return this.propertyService.findAll();
   }
+  @Get('filter')
+  @Public()
+  async filterProperties(
+    @Query('cityName') cityName?: string,
+    @Query('cityId') cityId?: string,
+    @Query('categoryId') category?: string,
+    @Query('amenities') amenities?: string | string[],
+    @Query('minRate') minRate?: string,
+  ) {
+    let amenitiesArray: string[] = [];
+
+    if (amenities) {
+      amenitiesArray = Array.isArray(amenities)
+        ? amenities
+        : amenities.split(',');
+    }
+
+    return this.propertyService.filterProperties(
+      cityName,
+      cityId,
+      category,
+      amenitiesArray,
+      minRate ? Number(minRate) : undefined,
+    );
+  }
 
   @Get('owner/:id')
   @Roles(Role.Owner)
@@ -56,7 +81,7 @@ export class PropertyController {
     return this.propertyService.findByCategory(categoryId);
   }
 
-  @Post('filter')
+  @Post('filter-amenities')
   @Public()
   async filterByAmenities(@Body('amenities') amenities: string[]) {
     if (!amenities || !Array.isArray(amenities) || amenities.length === 0) {
@@ -66,18 +91,6 @@ export class PropertyController {
     }
     return this.propertyService.filterByAmenities(amenities);
   }
-  @Get('/rate')
-  @Public()
-  async filterByRate(@Query('rate') rate: number) {
-    return this.propertyService.filterByRate(rate);
-  }
-
-  @Get('/top-rate')
-  @Public()
-  async getTopRate() {
-    return this.propertyService.getTopRate();
-  }
-
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.propertyService.findOne(id);

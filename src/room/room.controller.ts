@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { RoomService } from './room.service';
 import { CreateRoomDto } from './dto/create-room.dto';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { Roles } from 'src/decorator/roles.decorator';
 import { Role } from 'src/auth/enum';
 import { Public } from 'src/decorator/customize';
@@ -49,12 +49,8 @@ export class RoomController {
     },
   ) {
     const { startDate, endDate, city, sortOrder } = body;
-
-    // Chuyển đổi startDate và endDate từ chuỗi thành đối tượng Date
     const start = new Date(startDate);
     const end = new Date(endDate);
-
-    // Kiểm tra nếu dữ liệu đầu vào là hợp lệ
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       throw new Error('Invalid date format');
     }
@@ -101,7 +97,12 @@ export class RoomController {
   }
   @Put(':id')
   @Roles(Role.Owner)
-  update(@Param('id') id: string, @Body() updateRoomDto: CreateRoomDto) {
+  @UseInterceptors(FileInterceptor('files'))
+  update(
+    @Param('id') id: string,
+    @Body() updateRoomDto: any, // Chuyển thành `any` nếu DTO không hỗ trợ form-data
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
     return this.roomService.update(id, updateRoomDto);
   }
 }

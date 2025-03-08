@@ -8,12 +8,15 @@ import {
   Delete,
 } from '@nestjs/common';
 import { ConvenienceService } from './convenience.service';
+import { Roles } from 'src/decorator/roles.decorator';
+import { Role } from 'src/auth/enum';
 
 @Controller('conveniences')
 export class ConvenienceController {
   constructor(private readonly convenienceService: ConvenienceService) {}
 
   @Post()
+  @Roles(Role.Admin)
   create(@Body() createDto: { name: string }) {
     return this.convenienceService.create(createDto);
   }

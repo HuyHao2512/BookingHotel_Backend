@@ -20,10 +20,17 @@ class RoomBookingDto {
   @IsNumber()
   @Min(1)
   quantity: number;
+
+  @IsNumber()
+  @Min(0)
+  price: number;
 }
 export class CreateBookingDto {
   @IsMongoId()
   property: Types.ObjectId;
+
+  @IsString()
+  propertyName: string;
 
   @IsArray()
   @ValidateNested({ each: true })
@@ -32,6 +39,9 @@ export class CreateBookingDto {
 
   @IsMongoId()
   user: Types.ObjectId;
+
+  @IsString()
+  name: string;
 
   @IsDateString()
   checkIn: Date;
@@ -65,4 +75,10 @@ export class CreateBookingDto {
   @IsString()
   @IsEmail()
   email: string;
+
+  @IsString()
+  phone: string;
+
+  @IsString()
+  description: string;
 }

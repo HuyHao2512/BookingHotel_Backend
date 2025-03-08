@@ -7,11 +7,22 @@ export class Booking {
   @Prop({ required: true, type: Types.ObjectId, ref: 'Property' })
   property: Types.ObjectId;
 
+  @Prop({ required: true })
+  propertyName: string;
+
   @Prop({ required: true, type: Types.ObjectId, ref: 'Room' })
-  rooms: { room: Types.ObjectId; quantity: number }[];
+  rooms: {
+    room: Types.ObjectId;
+    quantity: number;
+    name: string;
+    price: number;
+  }[];
 
   @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
   user: Types.ObjectId;
+
+  @Prop({ required: true })
+  name: string;
 
   @Prop({ required: true })
   checkIn: Date;
@@ -39,6 +50,12 @@ export class Booking {
 
   @Prop({ type: String, required: true })
   email: string;
+
+  @Prop({ type: String })
+  description: string;
+
+  @Prop({ type: String })
+  phone: string;
 
   @Prop()
   confirmationToken: string;

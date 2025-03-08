@@ -4,17 +4,18 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import mongoose, { Model, ObjectId, Types } from 'mongoose';
+import mongoose, { Model, Types } from 'mongoose';
 import { Property, PropertyDocument } from './schemas/property.schema';
 import { CreatePropertyDto } from './dto/create-property.dto';
 import { UpdatePropertyDto } from './dto/update-property.dto';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
-import path from 'path';
+import { City } from 'src/city/schemas/city.schema';
 
 @Injectable()
 export class PropertyService {
   constructor(
     @InjectModel(Property.name) private propertyModel: Model<PropertyDocument>,
+    @InjectModel(City.name) private cityModel: Model<mongoose.Document>,
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
@@ -145,7 +146,6 @@ export class PropertyService {
   }
 
   async filterByAmenities(amenities: string[]): Promise<Property[]> {
-    // Kiểm tra xem tất cả ID có hợp lệ không
     const validAmenities = amenities.filter((id) =>
       mongoose.Types.ObjectId.isValid(id),
     );
@@ -161,12 +161,53 @@ export class PropertyService {
       amenities: { $all: amenitiesObjectIds },
     });
   }
+  async filterProperties(
+    cityName?: string,
+    cityId?: string,
+    categoryId?: string,
+    amenities?: string[],
+    minRate?: number,
+  ) {
+    const filter: any = {}; // Object chứa điều kiện lọc
 
-  async filterByRate(rate: number) {
-    return this.propertyModel.find({ rate });
-  }
+    // ✅ Tìm theo cityName hoặc cityId
+    if (cityName) {
+      const city = await this.cityModel.findOne({ name: cityName }).exec();
+      console.log('City:', city); // Log để debug
+      if (city) {
+        filter.city = city._id.toString(); // Đảm bảo đúng field trong database
+      } else {
+        return []; // Nếu không tìm thấy thành phố, trả về mảng rỗng
+      }
+    } else if (cityId) {
+      console.log('City ID:', cityId); // Log để debug
+      filter.city = cityId; // Dùng cityId nếu có
+    }
 
-  async getTopRate() {
-    return this.propertyModel.find().sort({ rate: -1 }).limit(10);
+    // ✅ Lọc theo categoryId
+    if (categoryId) {
+      filter.category = categoryId;
+    }
+
+    // ✅ Lọc theo amenities
+    if (amenities && amenities.length > 0) {
+      filter.amenities = {
+        $all: amenities.map((id) => new mongoose.Types.ObjectId(id)),
+      };
+    }
+
+    // ✅ Lọc theo rating (minRate)
+    if (minRate) {
+      filter.rating = { $gte: minRate };
+    }
+
+    const results = await this.propertyModel
+      .find(filter)
+      .populate('category')
+      .populate('city')
+      .exec();
+
+    console.log('Filtered Results:', results); // Log kết quả để debug
+    return results;
   }
 }
