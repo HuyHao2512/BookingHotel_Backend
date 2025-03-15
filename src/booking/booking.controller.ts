@@ -71,7 +71,7 @@ export class BookingController {
   }
 
   @Patch('/status/:id')
-  @Roles(Role.User)
+  @Roles(Role.Owner)
   async updateBookingStatus(
     @Param('id') id: string,
     @Body('status') status: 'pending' | 'confirmed',

@@ -95,14 +95,30 @@ export class RoomController {
   delete(@Param('id') id: string) {
     return this.roomService.delete(id);
   }
+  // @Put(':id')
+  // @Roles(Role.Owner)
+  // @UseInterceptors(FileInterceptor('files'))
+  // update(
+  //   @Param('id') id: string,
+  //   @Body() updateRoomDto: any, // Chuyển thành `any` nếu DTO không hỗ trợ form-data
+  //   @UploadedFiles() files: Express.Multer.File[],
+  // ) {
+  //   return this.roomService.update(id, updateRoomDto);
+  // }
   @Put(':id')
   @Roles(Role.Owner)
-  @UseInterceptors(FileInterceptor('files'))
+  @UseInterceptors(FilesInterceptor('files', 10))
   update(
     @Param('id') id: string,
-    @Body() updateRoomDto: any, // Chuyển thành `any` nếu DTO không hỗ trợ form-data
-    @UploadedFiles() files: Express.Multer.File[],
+    @Body() updateRoomDto: any,
+    @UploadedFiles() files?: Express.Multer.File[],
+    @Body('removeImageIds') removeImageIds?: string[],
   ) {
-    return this.roomService.update(id, updateRoomDto);
+    if (!files) {
+      console.log('No files received');
+    } else {
+      console.log('Files received:', files.length, files);
+    }
+    return this.roomService.update(id, updateRoomDto, files, removeImageIds);
   }
 }

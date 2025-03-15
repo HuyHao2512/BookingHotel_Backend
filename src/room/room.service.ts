@@ -87,14 +87,98 @@ export class RoomService {
     return this.roomModel.findByIdAndDelete(id).exec();
   }
 
-  async update(id: string, updateRoomDto: CreateRoomDto): Promise<Room> {
-    const { property, ...updatedData } = updateRoomDto;
-    return this.roomModel
-      .findByIdAndUpdate(id, updatedData, {
-        new: true, // Trả về dữ liệu sau khi update
-        runValidators: true, // Kiểm tra validation schema
-      })
-      .exec();
+  // async update(id: string, updateRoomDto: CreateRoomDto): Promise<Room> {
+  //   const { property, ...updatedData } = updateRoomDto;
+  //   return this.roomModel
+  //     .findByIdAndUpdate(id, updatedData, {
+  //       new: true, // Trả về dữ liệu sau khi update
+  //       runValidators: true, // Kiểm tra validation schema
+  //     })
+  //     .exec();
+  // }
+  async update(
+    id: string,
+    updateRoomDto: CreateRoomDto,
+    files?: Express.Multer.File[],
+    removeImageIds?: string[],
+  ) {
+    try {
+      const existingRoom = await this.roomModel.findById(id);
+      if (!existingRoom) {
+        throw new NotFoundException('Room not found');
+      }
+
+      const { property, ...updatedData } = updateRoomDto;
+      let images = existingRoom.images || [];
+
+      // Xóa ảnh cũ
+      if (removeImageIds?.length > 0) {
+        for (const publicId of removeImageIds) {
+          await this.cloudinaryService.deleteImage(publicId);
+        }
+        images = images.filter((img) => !removeImageIds.includes(img.publicId));
+      }
+
+      // Thêm ảnh mới
+      if (files && files.length > 0) {
+        try {
+          const newImages = await Promise.all(
+            files.map(async (file) => {
+              const uploadResult = await this.cloudinaryService.uploadImage(
+                file,
+                'rooms',
+              );
+              return {
+                url: uploadResult.secure_url,
+                publicId: uploadResult.public_id,
+              };
+            }),
+          );
+          images = [...images, ...newImages];
+        } catch (uploadError) {
+          throw new BadRequestException(
+            `Image upload failed: ${uploadError.message}`,
+          );
+        }
+      }
+
+      // Xử lý conveniences
+      let conveniences: Types.ObjectId[] = [];
+      if (updateRoomDto.conveniences) {
+        if (typeof updateRoomDto.conveniences === 'string') {
+          try {
+            const parsedConveniences = JSON.parse(updateRoomDto.conveniences);
+            if (Array.isArray(parsedConveniences)) {
+              conveniences = parsedConveniences
+                .map((id) => id.trim())
+                .filter((id) => Types.ObjectId.isValid(id))
+                .map((id) => new Types.ObjectId(id));
+            }
+          } catch (error) {
+            throw new BadRequestException('Invalid conveniences format');
+          }
+        } else if (Array.isArray(updateRoomDto.conveniences)) {
+          conveniences = updateRoomDto.conveniences
+            .filter((id) => Types.ObjectId.isValid(id))
+            .map((id) => new Types.ObjectId(id));
+        }
+      }
+
+      // Cập nhật room
+      const updatedRoom = await this.roomModel.findByIdAndUpdate(
+        id,
+        {
+          ...updatedData,
+          conveniences,
+          images,
+        },
+        { new: true, runValidators: true },
+      );
+
+      return updatedRoom;
+    } catch (error) {
+      throw new BadRequestException(`Error updating room: ${error.message}`);
+    }
   }
 
   async findAvailableRooms(

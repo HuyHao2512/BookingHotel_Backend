@@ -51,6 +51,6 @@ export class LikedService {
 
   // Lấy danh sách property đã thích của người dùng
   async getLikedProperties(userId: string) {
-    return this.likedModel.find({ user: userId }).populate('property');
+    return this.likedModel.find({ user: userId });
   }
 }

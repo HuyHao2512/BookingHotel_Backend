@@ -14,6 +14,7 @@ export class LikedController {
   }
 
   @Delete(':userId/:propertyId')
+  @Public()
   async removeFromLiked(
     @Param('userId') userId: string,
     @Param('propertyId') propertyId: string,
@@ -22,6 +23,7 @@ export class LikedController {
   }
 
   @Get(':userId')
+  @Public()
   async getLikedProperties(@Param('userId') userId: string) {
     return this.likedService.getLikedProperties(userId);
   }

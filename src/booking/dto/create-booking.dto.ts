@@ -51,7 +51,7 @@ export class CreateBookingDto {
 
   @IsEnum(['pending', 'confirmed'])
   @IsOptional()
-  status?: 'pending' | 'confirmed';
+  status?: 'pending' | 'confirmed' | 'cancelled';
 
   @IsNumber()
   @Min(0)

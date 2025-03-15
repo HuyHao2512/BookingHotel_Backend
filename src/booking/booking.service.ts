@@ -161,7 +161,7 @@ export class BookingService {
       const existingBookings = await this.bookingModel.find({
         'rooms.room': room._id,
         checkIn: { $lt: checkOutDate }, // Phòng đã đặt có ngày checkIn trước ngày checkOut của đơn mới
-        checkOut: { $gt: checkInDate }, // Phòng đã đặt có ngày checkOut sau ngày checkIn của đơn mới
+        checkOut: { $gt: checkInDate },
       });
 
       // Tính tổng số phòng đã được đặt trong khoảng thời gian này
@@ -389,7 +389,7 @@ export class BookingService {
   }
   async updateBookingStatus(
     id: string,
-    status: 'pending' | 'confirmed',
+    status: 'pending' | 'confirmed' | 'cancelled',
   ): Promise<Booking> {
     const booking = await this.bookingModel.findById(id);
     if (!booking) {

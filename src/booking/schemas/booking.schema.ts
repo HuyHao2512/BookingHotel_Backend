@@ -31,7 +31,7 @@ export class Booking {
   checkOut: Date;
 
   @Prop({ default: 'pending' })
-  status: 'pending' | 'confirmed';
+  status: 'pending' | 'confirmed' | 'cancelled';
 
   @Prop({ type: Number, required: true, min: 0 })
   totalPrice: number;
