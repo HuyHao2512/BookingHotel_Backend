@@ -451,10 +451,8 @@ export class BookingService {
     const bookings = await this.bookingModel
       .find({ user: userId })
       .populate('property rooms.room');
-    if (!bookings.length) {
-      throw new BadRequestException('No bookings found for this user');
-    }
-    return bookings;
+
+    return bookings.length ? bookings : [];
   }
 
   async getBookingsByProperty(propertyId: string): Promise<Booking[]> {
@@ -463,7 +461,7 @@ export class BookingService {
       .populate('user rooms.room');
 
     if (!bookings.length) {
-      throw new BadRequestException('No bookings found for this property');
+      return [];
     }
     return bookings;
   }

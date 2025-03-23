@@ -3,7 +3,7 @@ import { Document, Types } from 'mongoose';
 
 @Schema({ timestamps: true }) // Tự động thêm createdAt, updatedAt
 export class Review extends Document {
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  @Prop({ type: String, required: true }) // ID của người dùng
   user: string;
 
   @Prop({ type: Types.ObjectId, ref: 'Property', required: true })

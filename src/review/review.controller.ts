@@ -29,8 +29,7 @@ export class ReviewController {
   @Public()
   async findByProperty(@Param('propertyId') propertyId: string) {
     const reviews = await this.reviewService.findByProperty(propertyId);
-    if (!reviews.length) throw new NotFoundException('No reviews found');
-    return reviews;
+    return reviews ?? []; // Luôn trả về mảng rỗng
   }
 
   // 📌 API: Cập nhật review

@@ -8,7 +8,7 @@ import {
 } from 'class-validator';
 
 export class CreateReviewDto {
-  @IsMongoId()
+  @IsString()
   user: string;
 
   @IsMongoId()

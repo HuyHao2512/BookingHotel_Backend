@@ -262,7 +262,7 @@ export class RoomService {
     ]);
 
     if (!populatedRooms.length) {
-      throw new NotFoundException('No rooms found for this property');
+      return [];
     }
 
     return populatedRooms;
@@ -292,7 +292,7 @@ export class RoomService {
       { path: 'roomtype' },
     ]);
     if (!rooms.length) {
-      throw new NotFoundException('No rooms found for this property');
+      return [];
     }
 
     // Lấy danh sách đặt phòng trùng ngày
