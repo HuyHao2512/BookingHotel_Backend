@@ -11,6 +11,8 @@ import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { ValidationPipe } from '@nestjs/common';
+import { Roles } from 'src/decorator/roles.decorator';
+import { Role } from 'src/auth/enum';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -24,6 +26,7 @@ export class UsersController {
   // }
 
   @Get()
+  @Roles(Role.Admin)
   findAll() {
     return this.usersService.findAll();
   }

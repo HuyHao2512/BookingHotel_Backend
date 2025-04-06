@@ -12,7 +12,7 @@ export class Discount {
   percentage: number; // Phần trăm giảm giá (0 - 100)
 
   @Prop({ type: Date, required: true })
-  expiryDate: Date; // Ngày hết hạn
+  expireDate: Date; // Ngày hết hạn
 
   @Prop({ default: true })
   isActive: boolean; // Trạng thái áp dụng

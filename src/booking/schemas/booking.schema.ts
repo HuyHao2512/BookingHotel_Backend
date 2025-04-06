@@ -59,5 +59,8 @@ export class Booking {
 
   @Prop()
   confirmationToken: string;
+
+  createdAt?: Date; // Add createdAt explicitly for TypeScript type checking
+  updatedAt?: Date;
 }
 export const BookingSchema = SchemaFactory.createForClass(Booking);

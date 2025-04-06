@@ -25,6 +25,7 @@ import { EmailService } from './email/email.service';
 import { EmailModule } from './email/email.module';
 import { LikedModule } from './liked/liked.module';
 import { ReviewModule } from './review/review.module';
+// import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { ReviewModule } from './review/review.module';
     EmailModule,
     LikedModule,
     ReviewModule,
+    // PaymentModule,
   ],
   controllers: [AppController],
   providers: [

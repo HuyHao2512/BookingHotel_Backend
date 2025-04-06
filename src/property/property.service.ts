@@ -198,7 +198,7 @@ export class PropertyService {
 
     // ✅ Lọc theo rating (minRate)
     if (minRate) {
-      filter.rating = { $gte: minRate };
+      filter.rate = { $gte: minRate };
     }
 
     const results = await this.propertyModel

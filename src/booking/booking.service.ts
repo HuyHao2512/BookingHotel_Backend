@@ -531,4 +531,34 @@ export class BookingService {
       }
     }
   }
+  async getMonthlyStatistics(propertyId: string) {
+    // Lấy danh sách booking của property có status "paid"
+    const bookings = await this.bookingModel
+      .find({
+        property: propertyId,
+        status: 'confirmed',
+      })
+      .exec();
+
+    // Object để lưu số lượt đặt và doanh thu theo tháng
+    const monthlyStats: Record<
+      string,
+      { totalBookings: number; totalRevenue: number }
+    > = {};
+
+    // Duyệt qua từng booking để nhóm dữ liệu theo tháng
+    for (const booking of bookings) {
+      const date = new Date(booking.createdAt);
+      const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+
+      if (!monthlyStats[monthKey]) {
+        monthlyStats[monthKey] = { totalBookings: 0, totalRevenue: 0 };
+      }
+
+      monthlyStats[monthKey].totalBookings += 1;
+      monthlyStats[monthKey].totalRevenue += booking.finalPrice || 0;
+    }
+
+    return monthlyStats;
+  }
 }
