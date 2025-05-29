@@ -12,15 +12,26 @@ export class AuthService {
     private refreshTokenService: RefreshTokenService,
   ) {}
 
-  async validateUser(username: string, pass: string): Promise<any> {
-    const user = await this.usersService.findByEmail(username);
-    if (!user) this.throwUnauthorized('User not found');
+  async validateUser(email: string, password: string): Promise<any> {
+    const user = await this.usersService.findByEmail(email);
+    console.log('User from DB:', user); // Debug: Kiểm tra user có tồn tại không
+    console.log('User password from DB:', user?.password); // Debug: Kiểm tra password
 
-    const isValid = await this.usersService.isValidPassword(
-      pass,
+    if (!user) {
+      throw new UnauthorizedException('Email không tồn tại');
+    }
+
+    if (!user.password) {
+      throw new UnauthorizedException('Tài khoản không có mật khẩu');
+    }
+
+    const isPasswordValid = await this.usersService.isValidPassword(
+      password,
       user.password,
     );
-    if (!isValid) this.throwUnauthorized('Invalid password');
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Mật khẩu không đúng');
+    }
 
     return user;
   }
@@ -71,7 +82,11 @@ export class AuthService {
     }
 
     const userData = await this.usersService.createFromGoogle(googleUser.email);
-    const payload = { email: userData.email, sub: userData.userId.toString() };
+    const payload = {
+      email: userData.email,
+      _id: userData.userId.toString(),
+      roles: userData.roles,
+    };
     return {
       access_token: this.jwtService.sign(payload),
       user: {

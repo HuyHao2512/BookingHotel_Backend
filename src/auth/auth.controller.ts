@@ -6,6 +6,7 @@ import {
   Get,
   Req,
   Request,
+  Res,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
@@ -53,9 +54,13 @@ export class AuthController {
   async googleAuth(@Request() req) {}
 
   @Public()
-  @Get('/google/callback')
-  @UseGuards(AuthGuard('google'))
-  async googleAuthRedirect(@Request() req) {
-    return this.authService.googleLogin(req.user);
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google')) // <--- thêm dòng này!
+  async googleCallback(@Req() req, @Res() res) {
+    const { access_token, user } = await this.authService.googleLogin(req.user); // <-- dùng req.user
+
+    res.redirect(
+      `http://localhost:5173/auth/google/callback?token=${access_token}&user=${encodeURIComponent(JSON.stringify(user))}`,
+    );
   }
 }
