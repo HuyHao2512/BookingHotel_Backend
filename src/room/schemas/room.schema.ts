@@ -39,11 +39,11 @@ export class Room {
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Image' }], default: [] })
   images: Image[]; // Hình ảnh của phòng
 
-  @Prop({ required: true, default: 1 }) // 🏨 Số lượng phòng có sẵn
-  quantity: number;
+  // @Prop({ required: true, default: 1 }) // 🏨 Số lượng phòng có sẵn
+  // quantity: number;
 
-  @Prop({ default: false }) // 🏷 Nếu quantity = 1 thì phòng bị khóa
-  isLocked: boolean;
+  // @Prop({ default: false }) // 🏷 Nếu quantity = 1 thì phòng bị khóa
+  // isLocked: boolean;
 
   @Prop({ required: true })
   totalRoom: number; // 🏨 Tổng số lượng phòng

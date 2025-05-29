@@ -65,4 +65,19 @@ export class AuthService {
 
     return { message: 'Logout successful, refresh token deleted.' };
   }
+  async googleLogin(googleUser: any) {
+    if (!googleUser || !googleUser.email) {
+      throw new UnauthorizedException('Google login failed');
+    }
+
+    const userData = await this.usersService.createFromGoogle(googleUser.email);
+    const payload = { email: userData.email, sub: userData.userId.toString() };
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: {
+        email: userData.email,
+        roles: userData.roles,
+      },
+    };
+  }
 }

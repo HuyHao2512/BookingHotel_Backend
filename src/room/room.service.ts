@@ -87,15 +87,6 @@ export class RoomService {
     return this.roomModel.findByIdAndDelete(id).exec();
   }
 
-  // async update(id: string, updateRoomDto: CreateRoomDto): Promise<Room> {
-  //   const { property, ...updatedData } = updateRoomDto;
-  //   return this.roomModel
-  //     .findByIdAndUpdate(id, updatedData, {
-  //       new: true, // Trả về dữ liệu sau khi update
-  //       runValidators: true, // Kiểm tra validation schema
-  //     })
-  //     .exec();
-  // }
   async update(
     id: string,
     updateRoomDto: CreateRoomDto,
@@ -181,67 +172,6 @@ export class RoomService {
     }
   }
 
-  async findAvailableRooms(
-    startDateStr: string,
-    endDateStr: string,
-    city: string,
-    sortOrder?: 'asc' | 'desc',
-  ): Promise<{ availableRooms: Room[]; totalAvailable: number }> {
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
-    if (!(startDate instanceof Date) || !(endDate instanceof Date)) {
-      throw new Error('Invalid date input');
-    }
-    const cityDoc = await this.cityModel.findOne({ name: city });
-    if (!cityDoc) {
-      throw new Error('City not found');
-    }
-    const bookedRooms = await this.bookingModel.aggregate([
-      {
-        $match: {
-          $or: [{ checkIn: { $lte: endDate }, checkOut: { $gte: startDate } }],
-        },
-      },
-      {
-        $group: {
-          _id: '$room',
-          bookedCount: { $sum: 1 },
-        },
-      },
-    ]);
-    console.log('Booked Rooms:', bookedRooms);
-    const bookedRoomMap = new Map(
-      bookedRooms.map((booking) => [
-        booking._id.toString(),
-        booking.bookedCount,
-      ]),
-    );
-    const properties = await this.propertyModel.find({
-      city: cityDoc._id.toString(),
-    });
-    const propertyIds = properties.map((property) => property._id.toString());
-    let allRooms = await this.roomModel
-      .find({
-        property: { $in: propertyIds },
-        isAvailable: true,
-      })
-      .lean();
-    const availableRooms = allRooms
-      .map((room) => {
-        const bookedCount = bookedRoomMap.get(room._id.toString()) || 0;
-        const remainingRooms = Math.max(room.totalRoom - bookedCount, 0);
-        return { ...room, remainingRooms };
-      })
-      .filter((room) => room.remainingRooms > 0);
-    const totalAvailable = availableRooms.length;
-    if (sortOrder) {
-      availableRooms.sort((a, b) => {
-        return sortOrder === 'asc' ? a.price - b.price : b.price - a.price;
-      });
-    }
-    return { availableRooms, totalAvailable };
-  }
-
   async findByProperty(propertyId: string) {
     const rooms = await this.roomModel.aggregate([
       {
@@ -268,14 +198,73 @@ export class RoomService {
     return populatedRooms;
   }
 
+  // async findAvailableRoomsOfProperty(
+  //   propertyId: string,
+  //   checkIn: Date,
+  //   checkOut: Date,
+  // ) {
+  //   const Listrooms = await this.roomModel.aggregate([
+  //     {
+  //       $match: { property: propertyId }, // Lọc theo propertyId
+  //     },
+  //     {
+  //       $lookup: {
+  //         from: 'conveniences',
+  //         localField: 'conveniences',
+  //         foreignField: '_id',
+  //         as: 'conveniences',
+  //       },
+  //     },
+  //   ]);
+
+  //   const rooms = await this.roomModel.populate(Listrooms, [
+  //     { path: 'property' },
+  //     { path: 'roomtype' },
+  //   ]);
+  //   if (!rooms.length) {
+  //     return [];
+  //   }
+
+  //   // Lấy danh sách đặt phòng trùng ngày
+  //   const bookedRooms = await this.bookingModel
+  //     .find({
+  //       'rooms.room': { $in: rooms.map((r) => r._id) }, // Lọc theo danh sách roomId
+  //       checkIn: { $lt: checkOut }, // Check-in trước thời gian check-out
+  //       checkOut: { $gt: checkIn }, // Check-out sau thời gian check-in
+  //     })
+  //     .select('rooms') // Chỉ lấy danh sách phòng đã đặt
+  //     .lean();
+
+  //   // Tạo map lưu số lượng phòng đã được đặt trong khoảng thời gian
+  //   const bookedRoomCounts = new Map<string, number>();
+  //   for (const booking of bookedRooms) {
+  //     for (const bookedRoom of booking.rooms) {
+  //       const roomId = bookedRoom.room.toString();
+  //       const quantity = bookedRoom.quantity;
+  //       bookedRoomCounts.set(
+  //         roomId,
+  //         (bookedRoomCounts.get(roomId) || 0) + quantity,
+  //       );
+  //     }
+  //   }
+
+  //   // Lọc danh sách phòng còn trống dựa trên totalRoom - số lượng đã đặt
+  //   const availableRooms = rooms.filter((room) => {
+  //     const bookedQuantity = bookedRoomCounts.get(room._id.toString()) || 0;
+  //     return bookedQuantity < room.totalRoom; // Nếu số lượng đã đặt nhỏ hơn totalRoom, phòng còn trống
+  //   });
+
+  //   return availableRooms;
+  // }
   async findAvailableRoomsOfProperty(
     propertyId: string,
     checkIn: Date,
     checkOut: Date,
   ) {
+    //Lấy danh sách phòng của property kèm conveniences
     const Listrooms = await this.roomModel.aggregate([
       {
-        $match: { property: propertyId }, // Lọc theo propertyId
+        $match: { property: propertyId },
       },
       {
         $lookup: {
@@ -291,21 +280,22 @@ export class RoomService {
       { path: 'property' },
       { path: 'roomtype' },
     ]);
+
     if (!rooms.length) {
       return [];
     }
 
-    // Lấy danh sách đặt phòng trùng ngày
+    //Lấy danh sách phòng đã đặt trong khoảng thời gian checkIn - checkOut
     const bookedRooms = await this.bookingModel
       .find({
-        'rooms.room': { $in: rooms.map((r) => r._id) }, // Lọc theo danh sách roomId
-        checkIn: { $lt: checkOut }, // Check-in trước thời gian check-out
-        checkOut: { $gt: checkIn }, // Check-out sau thời gian check-in
+        'rooms.room': { $in: rooms.map((r) => r._id) },
+        checkIn: { $lt: checkOut },
+        checkOut: { $gt: checkIn },
       })
-      .select('rooms') // Chỉ lấy danh sách phòng đã đặt
+      .select('rooms')
       .lean();
 
-    // Tạo map lưu số lượng phòng đã được đặt trong khoảng thời gian
+    //Tính tổng số lượng phòng đã đặt theo roomId
     const bookedRoomCounts = new Map<string, number>();
     for (const booking of bookedRooms) {
       for (const bookedRoom of booking.rooms) {
@@ -318,11 +308,18 @@ export class RoomService {
       }
     }
 
-    // Lọc danh sách phòng còn trống dựa trên totalRoom - số lượng đã đặt
-    const availableRooms = rooms.filter((room) => {
-      const bookedQuantity = bookedRoomCounts.get(room._id.toString()) || 0;
-      return bookedQuantity < room.totalRoom; // Nếu số lượng đã đặt nhỏ hơn totalRoom, phòng còn trống
-    });
+    //Tạo danh sách phòng còn trống kèm số lượng phòng trống
+    const availableRooms = rooms
+      .map((room) => {
+        const bookedQuantity = bookedRoomCounts.get(room._id.toString()) || 0;
+        const availableRoomCount = room.totalRoom - bookedQuantity;
+
+        return {
+          ...room,
+          availableRoomCount,
+        };
+      })
+      .filter((room) => room.availableRoomCount > 0); // Chỉ lấy phòng còn trống
 
     return availableRooms;
   }

@@ -38,6 +38,27 @@ export class UsersService {
     };
   }
 
+  async createFromGoogle(
+    email: string,
+    roles: string[] = ['user'],
+  ): Promise<any> {
+    let user = await this.findByEmail(email);
+    if (!user) {
+      // Tạo user mới từ Google (không cần password)
+      user = await this.userModel.create({
+        email: email,
+        password: null, // Không có password cho Google
+        roles: roles,
+      });
+    }
+
+    return {
+      userId: user._id,
+      email: user.email,
+      roles: user.roles,
+    };
+  }
+
   findAll() {
     return this.userModel.find();
   }

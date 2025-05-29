@@ -1,10 +1,19 @@
-import { Controller, Post, UseGuards, Body, Get, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  UseGuards,
+  Body,
+  Get,
+  Req,
+  Request,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './local-auth.guard';
 import { Public } from '../decorator/customize';
 import { UsersService } from 'src/users/users.service';
 import { CreateUserDto } from '../users/dto/create-user.dto'; // Import DTO nếu cần
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class AuthController {
@@ -36,5 +45,17 @@ export class AuthController {
   @Post('/logout')
   async logout(@Body('refreshToken') refreshToken: string) {
     return this.authService.logout(refreshToken);
+  }
+
+  @Public()
+  @Get('/google')
+  @UseGuards(AuthGuard('google'))
+  async googleAuth(@Request() req) {}
+
+  @Public()
+  @Get('/google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleAuthRedirect(@Request() req) {
+    return this.authService.googleLogin(req.user);
   }
 }

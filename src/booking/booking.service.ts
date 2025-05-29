@@ -16,7 +16,6 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { EmailService } from 'src/email/email.service';
 @Injectable()
 export class BookingService {
-  private readonly logger = new Logger(BookingService.name);
   constructor(
     @InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
     @InjectModel(Room.name) private roomModel: Model<RoomDocument>,
@@ -24,110 +23,6 @@ export class BookingService {
     private readonly templockService: TemplockService,
     private readonly emailService: EmailService,
   ) {}
-
-  // async create(createBookingDto: CreateBookingDto): Promise<Booking> {
-  //   const userId = createBookingDto.user;
-  //   let { totalPrice, discount } = createBookingDto;
-  //   const checkInDate = new Date(createBookingDto.checkIn);
-  //   const checkOutDate = new Date(createBookingDto.checkOut);
-  //   const roomRequests = createBookingDto.rooms;
-  //   const roomIds = roomRequests.map((r) => r.room);
-
-  //   const rooms = await this.roomModel.find({ _id: { $in: roomIds } }).lean();
-  //   if (rooms.length !== roomIds.length) {
-  //     throw new BadRequestException('One or more rooms do not exist');
-  //   }
-  //   const propertyIds = [
-  //     ...new Set(rooms.map((room) => room.property.toString())),
-  //   ];
-
-  //   if (propertyIds.length > 1) {
-  //     throw new BadRequestException(
-  //       'All rooms must belong to the same property',
-  //     );
-  //   }
-  //   const propertyId = propertyIds[0];
-  //   const bookingRooms = roomRequests.map((roomRequest) => {
-  //     const room = rooms.find((r) => r._id.toString() === roomRequest.room);
-  //     if (!room)
-  //       throw new BadRequestException(`Room ${roomRequest.room} not found`);
-  //     if (room.quantity < roomRequest.quantity) {
-  //       throw new BadRequestException(
-  //         `Not enough rooms available for ${room.name}`,
-  //       );
-  //     }
-  //     return {
-  //       room: room._id,
-  //       name: room.name,
-  //       quantity: roomRequest.quantity,
-  //     };
-  //   });
-  //   if (checkInDate >= checkOutDate) {
-  //     throw new BadRequestException(
-  //       'Check-out date must be after check-in date',
-  //     );
-  //   }
-  //   if (checkInDate < new Date()) {
-  //     throw new BadRequestException('Check-in date cannot be in the past');
-  //   }
-  //   let finalPrice = totalPrice;
-  //   let discountId = null;
-  //   if (discount) {
-  //     const discountData = await this.discountService.findOne(
-  //       discount.toString(),
-  //     );
-  //     if (discountData && discountData.isActive) {
-  //       finalPrice -= (finalPrice * discountData.percentage) / 100;
-  //       discountId = new Types.ObjectId(discount);
-  //     }
-  //   }
-  //   for (const roomRequest of roomRequests) {
-  //     const room = rooms.find((r) => r._id.toString() === roomRequest.room);
-  //     room.quantity -= roomRequest.quantity;
-  //     await this.roomModel.updateOne(
-  //       { _id: room._id },
-  //       { $inc: { quantity: -roomRequest.quantity } },
-  //     );
-  //   }
-  //   const newBooking = new this.bookingModel({
-  //     user: userId,
-  //     property: propertyId,
-  //     rooms: bookingRooms,
-  //     finalPrice,
-  //     totalPrice,
-  //     discount: discountId,
-  //     checkIn: checkInDate,
-  //     checkOut: checkOutDate,
-  //     paymentMethod: createBookingDto.paymentMethod,
-  //     email: createBookingDto.email,
-  //   });
-
-  //   try {
-  //     const confirmationToken = randomBytes(32).toString('hex');
-  //     newBooking.confirmationToken = confirmationToken;
-  //     const savedBooking = await newBooking.save();
-  //     const confirmLink = `${process.env.FRONTEND_URL}/confirm-booking/${newBooking._id}?token=${confirmationToken}`;
-  //     await this.emailService.sendMail(
-  //       createBookingDto.email,
-  //       'Confirm Your Booking',
-  //       `
-  //         <p>Dear customer,</p>
-  //         <p>Your booking has been received. Click the link below to confirm your booking:</p>
-  //         <a href="${confirmLink}" target="_blank">Confirm Booking</a>
-  //       `,
-  //     );
-
-  //     return savedBooking;
-  //   } catch (error) {
-  //     for (const roomRequest of roomRequests) {
-  //       await this.roomModel.updateOne(
-  //         { _id: roomRequest.room },
-  //         { $inc: { quantity: roomRequest.quantity } },
-  //       );
-  //     }
-  //     throw error;
-  //   }
-  // }
   async create(createBookingDto: CreateBookingDto): Promise<Booking> {
     const userId = createBookingDto.user;
     let { totalPrice, discount } = createBookingDto;
@@ -231,11 +126,7 @@ export class BookingService {
     });
 
     try {
-      // const confirmationToken = randomBytes(32).toString('hex');
-      // newBooking.confirmationToken = confirmationToken;
       const savedBooking = await newBooking.save();
-
-      // const confirmLink = `${process.env.FRONTEND_URL}/confirm-booking/${newBooking._id}?token=${confirmationToken}`;
 
       // Tạo danh sách phòng từ dữ liệu booking
       const roomsList = newBooking.rooms
@@ -427,20 +318,20 @@ export class BookingService {
     const rooms = await this.roomModel.find({ _id: { $in: roomIds } });
     if (rooms.length === 0) throw new BadRequestException('Rooms not found');
     // Cập nhật số lượng phòng dựa vào số lượng đã đặt
-    await Promise.all(
-      rooms.map(async (room) => {
-        const bookedRoom = booking.rooms.find(
-          (r) => r.room.toString() === room._id.toString(),
-        );
-        if (bookedRoom) {
-          room.quantity += bookedRoom.quantity; // Cộng lại số lượng phòng đã đặt
-        }
-        if (room.quantity > 0) {
-          await this.templockService.releaseLock(room._id.toString());
-        }
-        await room.save();
-      }),
-    );
+    // await Promise.all(
+    //   rooms.map(async (room) => {
+    //     const bookedRoom = booking.rooms.find(
+    //       (r) => r.room.toString() === room._id.toString(),
+    //     );
+    //     if (bookedRoom) {
+    //       room.quantity += bookedRoom.quantity; // Cộng lại số lượng phòng đã đặt
+    //     }
+    //     if (room.quantity > 0) {
+    //       await this.templockService.releaseLock(room._id.toString());
+    //     }
+    //     await room.save();
+    //   }),
+    // );
     // Xóa booking sau khi phòng được giải phóng
     await this.bookingModel.deleteOne({ _id: bookingId });
 
@@ -465,72 +356,6 @@ export class BookingService {
     }
     return bookings;
   }
-
-  @Cron(CronExpression.EVERY_HOUR)
-  async autoCancelUnconfirmedBookings() {
-    this.logger.log('Checking for unconfirmed bookings...');
-
-    const now = new Date();
-    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-
-    // Tìm tất cả booking có status = "pending" và được tạo hơn 24h trước
-    const bookingsToCancel = await this.bookingModel.find({
-      status: 'pending',
-      createdAt: { $lte: twentyFourHoursAgo },
-    });
-
-    if (bookingsToCancel.length === 0) {
-      this.logger.log('No bookings to cancel.');
-      return;
-    }
-
-    await Promise.all(
-      bookingsToCancel.map(async (booking) => {
-        this.logger.warn(`Auto-canceling booking ID: ${booking._id}`);
-
-        // Đảm bảo room là mảng
-        const roomIds = Array.isArray(booking.rooms)
-          ? booking.rooms
-          : [booking.rooms];
-
-        const rooms = await this.roomModel.find({ _id: { $in: roomIds } });
-
-        if (rooms.length > 0) {
-          await Promise.all(
-            rooms.map(async (room) => {
-              room.quantity += 1;
-              await room.save();
-              await this.templockService.releaseLock(room._id.toString());
-            }),
-          );
-        }
-
-        // Xóa booking
-        await this.bookingModel.deleteOne({ _id: booking._id });
-      }),
-    );
-
-    this.logger.log(
-      `Canceled ${bookingsToCancel.length} unconfirmed bookings.`,
-    );
-  }
-
-  @Cron('0 0 * * *') // Chạy vào 00:00 mỗi ngày
-  async updateRoomAvailability() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const bookings = await this.bookingModel.find({ checkIn: today });
-
-    for (const booking of bookings) {
-      for (const room of booking.rooms) {
-        await this.roomModel.updateOne(
-          { _id: room.room },
-          { $inc: { quantity: -room.quantity } }, // Giảm số phòng khi check-in
-        );
-      }
-    }
-  }
   async getMonthlyStatistics(propertyId: string) {
     // Lấy danh sách booking của property có status "paid"
     const bookings = await this.bookingModel
@@ -539,14 +364,10 @@ export class BookingService {
         status: 'confirmed',
       })
       .exec();
-
-    // Object để lưu số lượt đặt và doanh thu theo tháng
     const monthlyStats: Record<
       string,
       { totalBookings: number; totalRevenue: number }
     > = {};
-
-    // Duyệt qua từng booking để nhóm dữ liệu theo tháng
     for (const booking of bookings) {
       const date = new Date(booking.createdAt);
       const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;

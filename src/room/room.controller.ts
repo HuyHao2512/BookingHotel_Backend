@@ -37,32 +37,6 @@ export class RoomController {
     return this.roomService.findAll();
   }
 
-  @Post('available')
-  @Public()
-  async findAvailableRooms(
-    @Body()
-    body: {
-      startDate: string;
-      endDate: string;
-      city: string;
-      sortOrder?: 'asc' | 'desc';
-    },
-  ) {
-    const { startDate, endDate, city, sortOrder } = body;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      throw new Error('Invalid date format');
-    }
-
-    return await this.roomService.findAvailableRooms(
-      startDate,
-      endDate,
-      city,
-      sortOrder,
-    );
-  }
-
   @Get('/available-property/:propertyId')
   @Public()
   async findAvailableRoomsOfProperty(
@@ -95,16 +69,6 @@ export class RoomController {
   delete(@Param('id') id: string) {
     return this.roomService.delete(id);
   }
-  // @Put(':id')
-  // @Roles(Role.Owner)
-  // @UseInterceptors(FileInterceptor('files'))
-  // update(
-  //   @Param('id') id: string,
-  //   @Body() updateRoomDto: any, // Chuyển thành `any` nếu DTO không hỗ trợ form-data
-  //   @UploadedFiles() files: Express.Multer.File[],
-  // ) {
-  //   return this.roomService.update(id, updateRoomDto);
-  // }
   @Put(':id')
   @Roles(Role.Owner)
   @UseInterceptors(FilesInterceptor('files', 10))

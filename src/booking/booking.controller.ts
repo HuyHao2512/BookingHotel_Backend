@@ -70,7 +70,6 @@ export class BookingController {
   async getMonthlyStatistics(@Query('propertyId') propertyId: string) {
     return await this.bookingService.getMonthlyStatistics(propertyId);
   }
-  // GET http://localhost:3000/bookings/property-revenue?propertyId=123abc&startDate=2025-03-01&endDate=2025-03-31
 
   @Get(':id')
   @Roles(Role.User, Role.Owner, Role.Admin)
