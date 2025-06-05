@@ -25,7 +25,9 @@ import { EmailService } from './email/email.service';
 import { EmailModule } from './email/email.module';
 import { LikedModule } from './liked/liked.module';
 import { ReviewModule } from './review/review.module';
-// import { PaymentModule } from './payment/payment.module';
+import { PaymentController } from './payment/payment.controller';
+import { PaymentModule } from './payment/payment.module';
+import { VnpayModule } from './vnpay/vnpay.module';
 
 @Module({
   imports: [
@@ -51,9 +53,10 @@ import { ReviewModule } from './review/review.module';
     EmailModule,
     LikedModule,
     ReviewModule,
-    // PaymentModule,
+    PaymentModule,
+    VnpayModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, PaymentController],
   providers: [
     AppService,
     {

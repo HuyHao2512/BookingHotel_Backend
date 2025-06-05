@@ -212,7 +212,7 @@ export class BookingService {
             </tr>
             <tr>
               <td style="padding: 10px 20px; font-size: 14px; color: #888;">
-                <p>Nếu có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi qua số điện thoại <strong>${newBooking.phone}</strong> hoặc email <strong>${newBooking.email}</strong>.</p>
+                <p>Nếu có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi qua số điện thoại <strong> 0385794810 </strong> hoặc email <strong>bookingb2111794@gmail.com0</strong>.</p>
                 <p>Trân trọng</p>
               </td>
             </tr>
