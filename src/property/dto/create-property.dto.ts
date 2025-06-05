@@ -1,4 +1,4 @@
-import { Type } from '@nestjs/common';
+import { Optional, Type } from '@nestjs/common';
 import { IsArray, IsMongoId, IsNotEmpty, IsString } from 'class-validator';
 import { Types } from 'mongoose';
 
@@ -41,4 +41,10 @@ export class CreatePropertyDto {
 
   @IsArray()
   files?: Express.Multer.File[];
+
+  @Optional()
+  long?: number;
+
+  @Optional()
+  lat?: number;
 }

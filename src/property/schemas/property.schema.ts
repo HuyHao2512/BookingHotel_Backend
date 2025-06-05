@@ -42,6 +42,12 @@ export class Property {
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Image' }], default: [] })
   images: Image[];
+
+  @Prop()
+  long: number;
+
+  @Prop()
+  lat: number;
 }
 
 export const PropertySchema = SchemaFactory.createForClass(Property);

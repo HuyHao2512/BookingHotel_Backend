@@ -36,10 +36,6 @@ export class AuthService {
     return user;
   }
 
-  private throwUnauthorized(message: string): never {
-    throw new UnauthorizedException(message);
-  }
-
   async login(user: JwtPayload) {
     const payload = { email: user.email, _id: user._id, roles: user.roles }; // Thêm roles vào payload
     const refreshToken = await this.refreshTokenService.create(

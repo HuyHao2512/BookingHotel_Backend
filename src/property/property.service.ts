@@ -206,8 +206,6 @@ export class PropertyService {
       .populate('category')
       .populate('city')
       .exec();
-
-    console.log('Filtered Results:', results); // Log kết quả để debug
     return results;
   }
 }
