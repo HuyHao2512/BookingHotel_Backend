@@ -92,6 +92,7 @@ export class PropertyController {
     return this.propertyService.filterByAmenities(amenities);
   }
   @Get(':id')
+  @Public()
   findOne(@Param('id') id: string) {
     return this.propertyService.findOne(id);
   }

@@ -124,6 +124,18 @@ export class BookingService {
       propertyName: createBookingDto.propertyName,
       description: createBookingDto.description,
     });
+    const qrBookingInfo = `
+Mã đặt phòng: ${newBooking._id}
+Tên khách: ${newBooking.name}
+Khách sạn: ${newBooking.propertyName}
+Nhận phòng: ${new Date(newBooking.checkIn).toLocaleDateString()}
+Trả phòng: ${new Date(newBooking.checkOut).toLocaleDateString()}
+Tổng tiền: ${newBooking.finalPrice.toLocaleString()} VND
+Thanh toán: ${newBooking.paymentMethod === '1' ? 'Thanh toán khi nhận phòng' : 'Thanh toán online'}
+`;
+
+    const qrData = encodeURIComponent(qrBookingInfo);
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${qrData}&size=200x200`;
 
     try {
       const savedBooking = await newBooking.save();
@@ -201,6 +213,12 @@ export class BookingService {
               <td style="padding: 10px 20px;">
                 <p><strong>Tổng tiền: </strong> <span style="color: #007bff;">${newBooking.finalPrice.toLocaleString()} VND</span></p>
                 <p><strong>Phương thức thanh toán: </strong> ${newBooking.paymentMethod === '1' ? 'Thanh toán khi nhận phòng' : 'Thanh toán online'}</p>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding: 20px;">
+                <p style="margin-bottom: 10px; font-weight: bold;">Quét mã QR để xem thông tin đặt phòng</p>
+                <img src="${qrCodeUrl}" alt="QR Code" width="200" height="200" style="border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
               </td>
             </tr>
             <tr>
