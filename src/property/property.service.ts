@@ -168,35 +168,28 @@ export class PropertyService {
     amenities?: string[],
     minRate?: number,
   ) {
-    const filter: any = {}; // Object chứa điều kiện lọc
+    const filter: any = {};
 
-    // ✅ Tìm theo cityName hoặc cityId
     if (cityName) {
       const city = await this.cityModel.findOne({ name: cityName }).exec();
-      console.log('City:', city); // Log để debug
       if (city) {
-        filter.city = city._id.toString(); // Đảm bảo đúng field trong database
+        filter.city = city._id.toString();
       } else {
-        return []; // Nếu không tìm thấy thành phố, trả về mảng rỗng
+        return [];
       }
     } else if (cityId) {
-      console.log('City ID:', cityId); // Log để debug
-      filter.city = cityId; // Dùng cityId nếu có
+      filter.city = cityId;
     }
 
-    // ✅ Lọc theo categoryId
     if (categoryId) {
       filter.category = categoryId;
     }
-
-    // ✅ Lọc theo amenities
     if (amenities && amenities.length > 0) {
       filter.amenities = {
         $all: amenities.map((id) => new mongoose.Types.ObjectId(id)),
       };
     }
 
-    // ✅ Lọc theo rating (minRate)
     if (minRate) {
       filter.rate = { $gte: minRate };
     }

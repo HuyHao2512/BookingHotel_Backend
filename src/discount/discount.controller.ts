@@ -28,26 +28,18 @@ export class DiscountController {
   findAll() {
     return this.discountService.findAll();
   }
-
-  //xem chi tiết mã giảm giá
-  @Get(':code')
-  @Roles(Role.Owner)
-  findOne(@Param('code') code: string) {
-    return this.discountService.findOne(code);
+  @Get('property/:propertyId')
+  @Roles(Role.Owner, Role.Admin)
+  findByProperty(@Param('propertyId') propertyId: string) {
+    return this.discountService.findByProperty(propertyId);
   }
 
-  @Patch(':code')
+  @Patch(':code/is-active')
   @Roles(Role.Owner, Role.Admin)
-  update(
+  async updateIsActive(
     @Param('code') code: string,
-    @Body() updateDiscountDto: UpdateDiscountDto,
+    @Body('isActive') isActive: boolean,
   ) {
-    return this.discountService.update(code, updateDiscountDto);
-  }
-
-  @Delete(':code')
-  @Roles(Role.Owner, Role.Admin)
-  remove(@Param('code') code: string) {
-    return this.discountService.remove(code);
+    return this.discountService.updateIsActive(code, isActive);
   }
 }

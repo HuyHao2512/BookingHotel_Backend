@@ -1,9 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Discount, DiscountDocument } from './schemas/discount.schema';
 import { CreateDiscountDto } from './dto/create-discount.dto';
 import { UpdateDiscountDto } from './dto/update-discount.dto';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class DiscountService {
@@ -12,6 +17,13 @@ export class DiscountService {
   ) {}
 
   async create(createDiscountDto: CreateDiscountDto): Promise<Discount> {
+    const existing = await this.discountModel.findOne({
+      code: createDiscountDto.code,
+    });
+    if (existing) {
+      throw new BadRequestException('Mã giảm giá đã tồn tại');
+    }
+
     const newDiscount = new this.discountModel(createDiscountDto);
     return newDiscount.save();
   }
@@ -20,26 +32,34 @@ export class DiscountService {
     return this.discountModel.find().exec();
   }
 
-  async findOne(code: string): Promise<Discount> {
-    const discount = await this.discountModel.findOne({ code }).exec();
-    if (!discount) throw new NotFoundException('Mã giảm giá không tồn tại');
-    return discount;
+  async findByProperty(propertyId: string): Promise<Discount[]> {
+    return this.discountModel.find({ propertyId }).exec();
+  }
+  async updateIsActive(code: string, isActive: boolean): Promise<Discount> {
+    const updated = await this.discountModel.findOneAndUpdate(
+      { code },
+      { isActive },
+      { new: true },
+    );
+
+    if (!updated) {
+      throw new NotFoundException('Không tìm thấy mã giảm giá');
+    }
+
+    return updated;
   }
 
-  async update(
-    code: string,
-    updateDiscountDto: UpdateDiscountDto,
-  ): Promise<Discount> {
-    const updatedDiscount = await this.discountModel
-      .findOneAndUpdate({ code }, updateDiscountDto, { new: true })
-      .exec();
-    if (!updatedDiscount)
-      throw new NotFoundException('Mã giảm giá không tồn tại');
-    return updatedDiscount;
-  }
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async deleteExpiredDiscounts() {
+    const now = new Date();
+    const result = await this.discountModel.deleteMany({
+      validUntil: { $lt: now },
+    });
 
-  async remove(code: string): Promise<void> {
-    const result = await this.discountModel.findOneAndDelete({ code }).exec();
-    if (!result) throw new NotFoundException('Mã giảm giá không tồn tại');
+    if (result.deletedCount > 0) {
+      console.log(
+        `[DiscountService] Đã xóa ${result.deletedCount} mã giảm giá hết hạn`,
+      );
+    }
   }
 }

@@ -19,7 +19,7 @@ import { EmailModule } from 'src/email/email.module';
     ScheduleModule.forRoot(),
     EmailModule,
   ],
-  providers: [BookingService, DiscountService],
+  providers: [BookingService],
   controllers: [BookingController],
 })
 export class BookingModule {}

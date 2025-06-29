@@ -28,6 +28,7 @@ import { ReviewModule } from './review/review.module';
 import { PaymentController } from './payment/payment.controller';
 import { PaymentModule } from './payment/payment.module';
 import { VnpayModule } from './vnpay/vnpay.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { VnpayModule } from './vnpay/vnpay.module';
     ReviewModule,
     PaymentModule,
     VnpayModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [AppController, PaymentController],
   providers: [

@@ -21,4 +21,7 @@ export class CreateDiscountDto {
 
   @IsBoolean()
   isActive?: boolean;
+
+  @IsString()
+  propertyId: string; // ID loại phòng áp dụng giảm giá
 }

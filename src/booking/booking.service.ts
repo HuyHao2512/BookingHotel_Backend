@@ -257,7 +257,6 @@ Thanh toán: ${newBooking.paymentMethod === '1' ? 'Thanh toán khi nhận phòng
     booking.status = 'confirmed';
     booking.confirmationToken = null;
     await booking.save();
-    console.log('Booking confirmed');
     return;
   }
   async findAll(): Promise<Booking[]> {

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
 import { DiscountService } from './discount.service';
 import { DiscountController } from './discount.controller';
+import { MongooseModule } from '@nestjs/mongoose';
 import { Discount, DiscountSchema } from './schemas/discount.schema';
 
 @Module({
@@ -10,7 +10,8 @@ import { Discount, DiscountSchema } from './schemas/discount.schema';
       { name: Discount.name, schema: DiscountSchema },
     ]),
   ],
+  controllers: [DiscountController],
   providers: [DiscountService],
-  exports: [DiscountService, MongooseModule], // Export để BookingModule có thể sử dụng
+  exports: [DiscountService], // 👈 THÊM DÒNG NÀY
 })
 export class DiscountModule {}

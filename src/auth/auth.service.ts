@@ -14,8 +14,6 @@ export class AuthService {
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.usersService.findByEmail(email);
-    console.log('User from DB:', user); // Debug: Kiểm tra user có tồn tại không
-    console.log('User password from DB:', user?.password); // Debug: Kiểm tra password
 
     if (!user) {
       throw new UnauthorizedException('Email không tồn tại');
