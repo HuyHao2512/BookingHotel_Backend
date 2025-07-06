@@ -12,6 +12,6 @@ import { Discount, DiscountSchema } from './schemas/discount.schema';
   ],
   controllers: [DiscountController],
   providers: [DiscountService],
-  exports: [DiscountService], // 👈 THÊM DÒNG NÀY
+  exports: [DiscountService], // Export DiscountService instead of MongooseModule
 })
 export class DiscountModule {}

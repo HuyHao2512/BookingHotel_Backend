@@ -1,17 +1,9 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param } from '@nestjs/common';
 import { DiscountService } from './discount.service';
 import { CreateDiscountDto } from './dto/create-discount.dto';
-import { UpdateDiscountDto } from './dto/update-discount.dto';
 import { Roles } from 'src/decorator/roles.decorator';
 import { Role } from 'src/auth/enum';
+import { Public } from 'src/decorator/customize';
 
 @Controller('discounts')
 export class DiscountController {
@@ -28,10 +20,17 @@ export class DiscountController {
   findAll() {
     return this.discountService.findAll();
   }
+
   @Get('property/:propertyId')
   @Roles(Role.Owner, Role.Admin)
   findByProperty(@Param('propertyId') propertyId: string) {
     return this.discountService.findByProperty(propertyId);
+  }
+
+  @Get(':code')
+  @Public()
+  findOne(@Param('code') code: string) {
+    return this.discountService.findOne(code);
   }
 
   @Patch(':code/is-active')

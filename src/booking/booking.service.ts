@@ -14,11 +14,17 @@ import { TemplockService } from 'src/templock/templock.service';
 import { Room, RoomDocument } from 'src/room/schemas/room.schema';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { EmailService } from 'src/email/email.service';
+import {
+  Discount,
+  DiscountDocument,
+} from 'src/discount/schemas/discount.schema';
 @Injectable()
 export class BookingService {
   constructor(
     @InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
     @InjectModel(Room.name) private roomModel: Model<RoomDocument>,
+    @InjectModel(Discount.name)
+    private readonly discountModel: Model<DiscountDocument>,
     private readonly discountService: DiscountService,
     private readonly templockService: TemplockService,
     private readonly emailService: EmailService,
@@ -97,13 +103,25 @@ export class BookingService {
 
     let finalPrice = totalPrice;
     let discountId = null;
+
     if (discount) {
-      const discountData = await this.discountService.findOne(
-        discount.toString(),
-      );
-      if (discountData && discountData.isActive) {
-        finalPrice -= (finalPrice * discountData.percentage) / 100;
-        discountId = new Types.ObjectId(discount);
+      // discount ở đây là `code` do người dùng nhập vào
+      const discountData = await this.discountModel.findOne({
+        code: discount,
+        isActive: true,
+        validUntil: { $gt: new Date() },
+        quantity: { $gt: 0 },
+      });
+
+      if (discountData) {
+        finalPrice -= (totalPrice * discountData.percentage) / 100;
+        discountId = discountData._id;
+
+        // Trừ số lượng còn lại
+        await this.discountModel.updateOne(
+          { _id: discountData._id },
+          { $inc: { quantity: -1 } },
+        );
       }
     }
 
@@ -144,12 +162,12 @@ Thanh toán: ${newBooking.paymentMethod === '1' ? 'Thanh toán khi nhận phòng
       const roomsList = newBooking.rooms
         .map(
           (room) => `
-  <tr>
-    <td style="padding: 8px; border-bottom: 1px solid #ddd;">${room.name}</td>
-    <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center;">${room.quantity}</td>
-    <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">${room.price.toLocaleString()} VND</td>
-  </tr>
-`,
+            <tr>
+              <td style="padding: 8px; border-bottom: 1px solid #ddd;">${room.name}</td>
+              <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center;">${room.quantity}</td>
+              <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">${room.price.toLocaleString()} VND</td>
+            </tr>
+          `,
         )
         .join('');
 
@@ -230,7 +248,7 @@ Thanh toán: ${newBooking.paymentMethod === '1' ? 'Thanh toán khi nhận phòng
             </tr>
             <tr>
               <td style="padding: 10px 20px; font-size: 14px; color: #888;">
-                <p>Nếu có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi qua số điện thoại <strong> 0385794810 </strong> hoặc email <strong>bookingb2111794@gmail.com0</strong>.</p>
+                <p>Nếu có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi qua số điện thoại <strong> 0385794810 </strong> hoặc email <strong>bookingb2111794@gmail.com</strong>.</p>
                 <p>Trân trọng</p>
               </td>
             </tr>

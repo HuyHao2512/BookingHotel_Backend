@@ -35,6 +35,17 @@ export class DiscountService {
   async findByProperty(propertyId: string): Promise<Discount[]> {
     return this.discountModel.find({ propertyId }).exec();
   }
+
+  async findOne(code: string): Promise<Discount> {
+    const discount = await this.discountModel
+      .findOne({ code })
+      .populate('propertyId')
+      .exec();
+    if (!discount) {
+      throw new NotFoundException('Không tìm thấy mã giảm giá');
+    }
+    return discount;
+  }
   async updateIsActive(code: string, isActive: boolean): Promise<Discount> {
     const updated = await this.discountModel.findOneAndUpdate(
       { code },
