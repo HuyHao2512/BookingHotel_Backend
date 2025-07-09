@@ -102,14 +102,83 @@ export class PropertyService {
       .exec();
   }
 
-  async update(id: string, updatePropertyDto: UpdatePropertyDto) {
-    const updatedProperty = await this.propertyModel
-      .findByIdAndUpdate(id, updatePropertyDto, { new: true })
-      .exec();
-    if (!updatedProperty) {
-      throw new NotFoundException('Property not found');
+  async update(
+    id: string,
+    updatePropertyDto: UpdatePropertyDto,
+    files?: Express.Multer.File[],
+    removeImageIds?: string[],
+  ) {
+    try {
+      const existingProperty = await this.propertyModel.findById(id);
+      if (!existingProperty) {
+        throw new NotFoundException('Room not found');
+      }
+      const { ...updatedData } = updatePropertyDto;
+      let images = existingProperty.images || [];
+
+      if (removeImageIds?.length > 0) {
+        for (const publicId of removeImageIds) {
+          await this.cloudinaryService.deleteImage(publicId);
+        }
+        images = images.filter((img) => !removeImageIds.includes(img.publicId));
+      }
+
+      if (files && files.length > 0) {
+        try {
+          const newImages = await Promise.all(
+            files.map(async (file) => {
+              const uploadResult = await this.cloudinaryService.uploadImage(
+                file,
+                'properties',
+              );
+              return {
+                url: uploadResult.secure_url,
+                publicId: uploadResult.public_id,
+              };
+            }),
+          );
+          images = [...images, ...newImages];
+        } catch (uploadError) {
+          throw new BadRequestException(
+            `Image upload failed: ${uploadError.message}`,
+          );
+        }
+      }
+      let amenities: Types.ObjectId[] = [];
+      if (updatePropertyDto.amenities) {
+        if (typeof updatePropertyDto.amenities === 'string') {
+          try {
+            const parsedConveniences = JSON.parse(updatePropertyDto.amenities);
+            if (Array.isArray(parsedConveniences)) {
+              amenities = parsedConveniences
+                .map((id) => id.trim())
+                .filter((id) => Types.ObjectId.isValid(id))
+                .map((id) => new Types.ObjectId(id));
+            }
+          } catch (error) {
+            throw new BadRequestException('Invalid amenities format');
+          }
+        } else if (Array.isArray(updatePropertyDto.amenities)) {
+          amenities = updatePropertyDto.amenities
+            .filter((id) => Types.ObjectId.isValid(id))
+            .map((id) => new Types.ObjectId(id));
+        }
+      }
+      const updatedProperty = await this.propertyModel.findByIdAndUpdate(
+        id,
+        {
+          ...updatedData,
+          amenities,
+          images,
+        },
+        { new: true, runValidators: true },
+      );
+      return updatedProperty;
+    } catch (error) {
+      throw new BadRequestException(
+        `Error updating property: ${error.message}`,
+      );
     }
-    return updatedProperty;
   }
 
   async remove(id: string) {

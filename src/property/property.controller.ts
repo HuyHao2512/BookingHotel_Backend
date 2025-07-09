@@ -10,6 +10,7 @@ import {
   UploadedFiles,
   BadRequestException,
   Query,
+  Put,
 } from '@nestjs/common';
 import { PropertyService } from './property.service';
 import { CreatePropertyDto } from './dto/create-property.dto';
@@ -97,13 +98,27 @@ export class PropertyController {
     return this.propertyService.findOne(id);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @Roles(Role.Owner)
+  @UseInterceptors(FilesInterceptor('files', 10))
   update(
     @Param('id') id: string,
-    @Body() updatePropertyDto: UpdatePropertyDto,
+    @Body() updatePropertyDto: any,
+    @UploadedFiles() files?: Express.Multer.File[],
+    @Body('removeImageIds') removeImageIds?: string[],
   ) {
-    return this.propertyService.update(id, updatePropertyDto);
+    if (!files) {
+      console.log('No files received');
+    } else {
+      console.log('Files received:', files.length, files);
+    }
+
+    return this.propertyService.update(
+      id,
+      updatePropertyDto,
+      files,
+      removeImageIds,
+    );
   }
 
   @Delete(':id')
