@@ -102,27 +102,9 @@ export class BookingService {
     }
 
     let finalPrice = totalPrice;
-    let discountId = null;
 
     if (discount) {
-      // discount ở đây là `code` do người dùng nhập vào
-      const discountData = await this.discountModel.findOne({
-        code: discount,
-        isActive: true,
-        validUntil: { $gt: new Date() },
-        quantity: { $gt: 0 },
-      });
-
-      if (discountData) {
-        finalPrice -= (totalPrice * discountData.percentage) / 100;
-        discountId = discountData._id;
-
-        // Trừ số lượng còn lại
-        await this.discountModel.updateOne(
-          { _id: discountData._id },
-          { $inc: { quantity: -1 } },
-        );
-      }
+      finalPrice = finalPrice - (finalPrice * discount) / 100;
     }
 
     // Không giảm số lượng phòng ngay lập tức, chỉ lưu thông tin đặt phòng
@@ -132,7 +114,7 @@ export class BookingService {
       rooms: bookingRooms,
       finalPrice,
       totalPrice,
-      discount: discountId,
+      discount: discount,
       checkIn: checkInDate,
       checkOut: checkOutDate,
       paymentMethod: createBookingDto.paymentMethod,
@@ -143,14 +125,14 @@ export class BookingService {
       description: createBookingDto.description,
     });
     const qrBookingInfo = `
-Mã đặt phòng: ${newBooking._id}
-Tên khách: ${newBooking.name}
-Khách sạn: ${newBooking.propertyName}
-Nhận phòng: ${new Date(newBooking.checkIn).toLocaleDateString()}
-Trả phòng: ${new Date(newBooking.checkOut).toLocaleDateString()}
-Tổng tiền: ${newBooking.finalPrice.toLocaleString()} VND
-Thanh toán: ${newBooking.paymentMethod === '1' ? 'Thanh toán khi nhận phòng' : 'Thanh toán online'}
-`;
+        Mã đặt phòng: ${newBooking._id}
+        Tên khách: ${newBooking.name}
+        Khách sạn: ${newBooking.propertyName}
+        Nhận phòng: ${new Date(newBooking.checkIn).toLocaleDateString()}
+        Trả phòng: ${new Date(newBooking.checkOut).toLocaleDateString()}
+        Tổng tiền: ${newBooking.finalPrice.toLocaleString()} VND
+        Thanh toán: ${newBooking.paymentMethod === '1' ? 'Thanh toán khi nhận phòng' : 'Thanh toán online'}
+        `;
 
     const qrData = encodeURIComponent(qrBookingInfo);
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${qrData}&size=200x200`;

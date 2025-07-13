@@ -36,8 +36,8 @@ export class Booking {
   @Prop({ type: Number, required: true, min: 0 })
   totalPrice: number;
 
-  @Prop({ type: Types.ObjectId, ref: 'Discount', default: null })
-  discount?: Types.ObjectId;
+  @Prop({ type: Number, min: 0 })
+  discount?: number;
 
   @Prop({ type: Number, required: true, min: 0 })
   finalPrice: number;

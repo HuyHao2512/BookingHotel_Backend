@@ -24,4 +24,7 @@ export class CreateDiscountDto {
 
   @IsString()
   propertyId: string; // ID loại phòng áp dụng giảm giá
+
+  @IsString()
+  description?: string; // Mô tả giảm giá, có thể để trống
 }

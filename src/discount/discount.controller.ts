@@ -26,6 +26,11 @@ export class DiscountController {
   findByProperty(@Param('propertyId') propertyId: string) {
     return this.discountService.findByProperty(propertyId);
   }
+  @Get('public')
+  @Public()
+  getDiscountPublic() {
+    return this.discountService.getDiscountPublic();
+  }
 
   @Get(':code')
   @Public()
@@ -33,6 +38,28 @@ export class DiscountController {
     return this.discountService.findOne(code);
   }
 
+  @Post('verify')
+  @Public()
+  async verifyDiscount(
+    @Body() verifyDiscountDto: { userId: string; code: string },
+  ) {
+    return this.discountService.verifyDiscount(
+      verifyDiscountDto.userId,
+      verifyDiscountDto.code,
+    );
+  }
+
+  // API áp dụng mã
+  @Post('apply')
+  @Public()
+  async applyDiscount(
+    @Body() applyDiscountDto: { userId: string; code: string },
+  ) {
+    return this.discountService.applyDiscount(
+      applyDiscountDto.userId,
+      applyDiscountDto.code,
+    );
+  }
   @Patch(':code/is-active')
   @Roles(Role.Owner, Role.Admin)
   async updateIsActive(

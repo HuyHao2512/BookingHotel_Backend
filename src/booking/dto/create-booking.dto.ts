@@ -57,9 +57,8 @@ export class CreateBookingDto {
   @Min(0)
   totalPrice: number;
 
-  @IsMongoId()
   @IsOptional()
-  discount?: Types.ObjectId;
+  discount?: number;
 
   @IsNumber()
   @Min(0)
