@@ -17,7 +17,6 @@ export class CityService {
   async createCity(createCityDto: CreateCityDto, file: Express.Multer.File) {
     const { name } = createCityDto;
 
-    // ✅ Kiểm tra nếu đã có city trùng tên (không phân biệt hoa thường)
     const existingCity = await this.cityModel.findOne({
       name: { $regex: new RegExp(`^${name}$`, 'i') },
     });
@@ -42,7 +41,6 @@ export class CityService {
     return newCity.save();
   }
 
-  // Cập nhật thông tin thành phố
   async updateCity(
     id: string,
     updateCityDto: UpdateCityDto,
@@ -71,17 +69,14 @@ export class CityService {
     return city.save();
   }
 
-  // Lấy tất cả các thành phố
   async findAll() {
     return this.cityModel.find().exec();
   }
 
-  // Lấy thông tin chi tiết của một thành phố
   async findOne(id: string) {
     return this.cityModel.findById(id).exec();
   }
 
-  // Xóa thành phố
   async removeCity(id: string) {
     const city = await this.cityModel.findById(id);
     if (!city) {
@@ -95,14 +90,12 @@ export class CityService {
     return this.cityModel.findByIdAndDelete(id).exec();
   }
 
-  // Tìm kiếm thành phố theo tên
   async findByName(name: string) {
     return this.cityModel
       .find({ name: { $regex: name, $options: 'i' } })
       .exec();
   }
 
-  // Đếm số lượng thành phố
   async countCities() {
     return this.cityModel.countDocuments().exec();
   }

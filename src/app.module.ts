@@ -29,6 +29,7 @@ import { PaymentController } from './payment/payment.controller';
 import { PaymentModule } from './payment/payment.module';
 import { VnpayModule } from './vnpay/vnpay.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { BannerModule } from './banner/banner.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     PaymentModule,
     VnpayModule,
     ScheduleModule.forRoot(),
+    BannerModule,
   ],
   controllers: [AppController, PaymentController],
   providers: [

@@ -66,7 +66,6 @@ export class BookingController {
   }
   @Get('property-revenue')
   @Roles(Role.Owner, Role.Admin)
-  @Get('monthly-stats')
   async getMonthlyStatistics(@Query('propertyId') propertyId: string) {
     return await this.bookingService.getMonthlyStatistics(propertyId);
   }

@@ -378,7 +378,6 @@ export class BookingService {
     const bookings = await this.bookingModel
       .find({
         property: propertyId,
-        status: 'confirmed',
       })
       .exec();
     const monthlyStats: Record<
