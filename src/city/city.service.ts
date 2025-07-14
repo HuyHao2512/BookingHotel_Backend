@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
@@ -15,6 +15,17 @@ export class CityService {
 
   // Tạo thành phố mới
   async createCity(createCityDto: CreateCityDto, file: Express.Multer.File) {
+    const { name } = createCityDto;
+
+    // ✅ Kiểm tra nếu đã có city trùng tên (không phân biệt hoa thường)
+    const existingCity = await this.cityModel.findOne({
+      name: { $regex: new RegExp(`^${name}$`, 'i') },
+    });
+
+    if (existingCity) {
+      throw new BadRequestException(`Thành phố ${name} đã tồn tại.`);
+    }
+
     let image;
     if (file) {
       const uploadResult = await this.cloudinaryService.uploadImage(
@@ -26,6 +37,7 @@ export class CityService {
         publicId: uploadResult.public_id,
       };
     }
+
     const newCity = new this.cityModel({ ...createCityDto, image });
     return newCity.save();
   }

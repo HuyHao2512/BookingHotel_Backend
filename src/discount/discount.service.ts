@@ -69,7 +69,7 @@ export class DiscountService {
   async getDiscountPublic(): Promise<Discount[]> {
     const now = new Date();
     return this.discountModel
-      .find({ isActive: true, expireDate: { $gt: now }, propertyId: null })
+      .find({ expireDate: { $gt: now }, propertyId: null })
       .exec();
   }
   async verifyDiscount(userId: string, code: string) {
