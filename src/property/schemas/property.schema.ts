@@ -44,10 +44,7 @@ export class Property {
   images: Image[];
 
   @Prop()
-  long: number;
-
-  @Prop()
-  lat: number;
+  googleMapUrl: string;
 }
 
 export const PropertySchema = SchemaFactory.createForClass(Property);

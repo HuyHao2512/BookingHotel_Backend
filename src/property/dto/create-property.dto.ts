@@ -43,8 +43,6 @@ export class CreatePropertyDto {
   files?: Express.Multer.File[];
 
   @Optional()
-  long?: number;
-
-  @Optional()
-  lat?: number;
+  @IsString()
+  googleMapUrl?: string;
 }
