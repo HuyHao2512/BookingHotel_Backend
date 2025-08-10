@@ -366,7 +366,8 @@ export class BookingService {
   async getBookingsByProperty(propertyId: string): Promise<Booking[]> {
     const bookings = await this.bookingModel
       .find({ property: propertyId })
-      .populate('user rooms.room');
+      .populate('user rooms.room')
+      .sort({ checkIn: 1 });
 
     if (!bookings.length) {
       return [];
@@ -374,19 +375,23 @@ export class BookingService {
     return bookings;
   }
   async getMonthlyStatistics(propertyId: string) {
-    // Lấy danh sách booking của property có status "paid"
+    // Lấy danh sách booking của property
     const bookings = await this.bookingModel
       .find({
         property: propertyId,
       })
       .exec();
+
     const monthlyStats: Record<
       string,
       { totalBookings: number; totalRevenue: number }
     > = {};
+
     for (const booking of bookings) {
       const date = new Date(booking.createdAt);
-      const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+      const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1)
+        .toString()
+        .padStart(2, '0')}`;
 
       if (!monthlyStats[monthKey]) {
         monthlyStats[monthKey] = { totalBookings: 0, totalRevenue: 0 };
@@ -396,6 +401,17 @@ export class BookingService {
       monthlyStats[monthKey].totalRevenue += booking.finalPrice || 0;
     }
 
-    return monthlyStats;
+    // Sắp xếp kết quả theo thứ tự tháng tăng dần
+    const sortedStats = Object.keys(monthlyStats)
+      .sort() // Mặc định sort theo chuỗi ISO tăng dần (YYYY-MM)
+      .reduce(
+        (acc, key) => {
+          acc[key] = monthlyStats[key];
+          return acc;
+        },
+        {} as typeof monthlyStats,
+      );
+
+    return sortedStats;
   }
 }

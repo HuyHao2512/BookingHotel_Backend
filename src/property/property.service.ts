@@ -260,7 +260,13 @@ export class PropertyService {
     }
 
     if (minRate) {
-      filter.rate = { $gte: minRate };
+      if (minRate >= 1 && minRate < 5) {
+        filter.rate = { $gte: minRate, $lt: minRate + 1 };
+      } else if (minRate === 5) {
+        filter.rate = 5; // hoặc { $eq: 5 } nếu bạn thích rõ ràng hơn
+      } else {
+        filter.rate = { $gte: minRate };
+      }
     }
 
     const results = await this.propertyModel
