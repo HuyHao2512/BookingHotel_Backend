@@ -70,6 +70,16 @@ export class BookingController {
     return await this.bookingService.getMonthlyStatistics(propertyId);
   }
 
+  @Get('all-revenue')
+  @Roles(Role.Admin)
+  async getAllRevenue() {
+    return await this.bookingService.getRevenue();
+  }
+  @Get('revenue-by-city')
+  @Roles(Role.Admin)
+  async getRevenueByCity() {
+    return await this.bookingService.getMonthlyBookingsByCity();
+  }
   @Get(':id')
   @Roles(Role.User, Role.Owner, Role.Admin)
   findOne(@Param('id') id: string) {

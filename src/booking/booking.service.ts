@@ -414,4 +414,73 @@ export class BookingService {
 
     return sortedStats;
   }
+  async getRevenue() {
+    const bookings = await this.bookingModel.find().exec();
+
+    const monthlyStats: Record<
+      string,
+      { totalBookings: number; totalRevenue: number }
+    > = {};
+
+    for (const booking of bookings) {
+      const date = new Date(booking.createdAt);
+      const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1)
+        .toString()
+        .padStart(2, '0')}`;
+
+      if (!monthlyStats[monthKey]) {
+        monthlyStats[monthKey] = { totalBookings: 0, totalRevenue: 0 };
+      }
+
+      monthlyStats[monthKey].totalBookings += 1;
+      monthlyStats[monthKey].totalRevenue += booking.finalPrice || 0;
+    }
+
+    const sortedStats = Object.keys(monthlyStats)
+      .sort() // mặc định sort theo chuỗi YYYY-MM
+      .reduce(
+        (acc, key) => {
+          acc[key] = monthlyStats[key];
+          return acc;
+        },
+        {} as typeof monthlyStats,
+      );
+
+    return sortedStats;
+  }
+  async getMonthlyBookingsByCity() {
+    const bookings = await this.bookingModel
+      .find()
+      .populate({
+        path: 'property',
+        populate: {
+          path: 'city',
+          select: 'name', // Lấy tên thành phố
+        },
+      })
+      .exec();
+
+    const stats: Record<string, Record<string, number>> = {};
+
+    for (const booking of bookings) {
+      // Lấy tên thành phố thay vì ID
+      const cityName = (booking.property as any).city.name;
+      const date = new Date(booking.createdAt);
+      const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1)
+        .toString()
+        .padStart(2, '0')}`;
+
+      if (!stats[cityName]) {
+        stats[cityName] = {};
+      }
+
+      if (!stats[cityName][monthKey]) {
+        stats[cityName][monthKey] = 0;
+      }
+
+      stats[cityName][monthKey] += 1;
+    }
+
+    return stats;
+  }
 }
