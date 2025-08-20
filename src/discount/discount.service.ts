@@ -69,7 +69,7 @@ export class DiscountService {
   async getDiscountPublic(): Promise<Discount[]> {
     return this.discountModel
       .find({
-        propertyId: { $exists: false }, // Thay đổi ở đây
+        propertyId: { $exists: false },
       })
       .exec();
   }
@@ -79,8 +79,6 @@ export class DiscountService {
     if (!discount) {
       throw new NotFoundException('Mã giảm giá không tồn tại');
     }
-
-    // Kiểm tra người dùng đã sử dụng mã này chưa
     const hasUsed = await this.usageModel.findOne({
       userId,
       discountCode: code,
@@ -96,12 +94,8 @@ export class DiscountService {
     };
   }
 
-  // Áp dụng mã giảm giá
   async applyDiscount(userId: string, code: string) {
-    // Kiểm tra lại trước khi áp dụng
     await this.verifyDiscount(userId, code);
-
-    // Ghi nhận sử dụng mã
     await this.usageModel.create({
       userId,
       discountCode: code,
